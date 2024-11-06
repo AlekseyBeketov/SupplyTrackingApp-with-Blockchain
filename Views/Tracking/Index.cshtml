@@ -1,0 +1,108 @@
+﻿@model Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
+
+@if (User.IsInRole("admin"))
+{
+    <p>Это специальный контент только для администраторов.</p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Blockchain ID</th>
+            <th>Vendor ID</th>
+            <th>Client ID</th>
+            <th>Transporter ID</th>
+            <th>User ID</th>
+            <th>Event Type</th>
+            <th>Location</th>
+            <th>Car Number</th>
+            <th>Event Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var block in Model.Blockchainblocks)
+        {
+            <tr>
+                <td>@block.Blockchainid</td>
+                <td>@block.Vendorid</td>
+                <td>@block.Clientid</td>
+                <td>@block.Transporterid</td>
+                <td>@block.Userid</td>
+                <td>@block.Eventtype</td>
+                <td>@block.Location</td>
+                <td>@block.Carnumber</td>
+                <td>@block.Eventdetails</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (User.IsInRole("client"))
+{
+    <p>Это специальный контент только для клиентов.</p>
+    <!-- Аккордеон -->
+    <div class="accordion" id="newOrderAccordion">
+        <div class="card">
+            <div class="card-header" id="headingOne">
+                <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseOne">
+                        <h3>Сделать новый заказ ▼</h3>
+                    </button>
+                </h5>
+            </div>
+
+            <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#newOrderAccordion">
+                <div class="card-body">
+                    <h3>Выберите производителя</h3>
+                    <form asp-action="Index" method="post">
+                        <select class="form-select" id="vendorSelect" name="selectedVendor" style="width:250px; height:50px" onchange="this.form.submit()">
+                            @foreach (var vendor in Model.Vendors)
+                            {
+                                <option value="@vendor.Vendorid" selected="@(vendor.Vendorid == ViewBag.SelectedVendorDetails?.Vendorid ? "selected" : null)">
+                                    @vendor.Vendorname
+                                </option>
+                            }
+                        </select>
+                    </form>
+
+                    @if (ViewBag.SelectedVendorDetails != null)
+                    {
+                        <h5>Адрес: @ViewBag.SelectedVendorDetails.Address</h5>
+                        <h5>Email: @ViewBag.SelectedVendorDetails.Email</h5>
+                        <h5>Телефон: @ViewBag.SelectedVendorDetails.Phone</h5>
+                    }
+
+                    <div id="productContainer">
+                        <div class="productRow">
+                            <select class="form-select productSelect" name="selectedProduct" style="width:400px; height:50px">
+                                @foreach (var product in @ViewBag.VendorProducts)
+                                {
+                                    <option value="@product.Productid" selected="@(product.Productid == 1 ? "selected" : null)">
+                                        @product.Productname @product.Productweight гр., @product.Productprice ₽
+                                    </option>
+                                }
+                            </select>
+                            <input type="number" min="1" class="form-control quantityInput" name="quantity" style="width:100px; height:50px" placeholder="Количество">
+                            <button type="button" class="btn btn-primary addProduct">Добавить</button>
+                            <button type="button" class="btn btn-danger removeProduct" style="display:none">Удалить</button>
+                        </div>
+                    </div>
+                    <h5>Детали заказа:</h5>
+                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea"></textarea>
+
+                    <h5><div id="addedProductsContainer"></div></h5>
+                    <button type="button" id="sendBatchButton" class="btn btn-success">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@foreach (var user in Model.Users)
+{
+    <p>
+        @user.Userid @user.Username @user.Passwordhash @user.Role
+    </p>
+}
+

@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\Blockchain_Supply_Chain_Tracking_System.props" />
+</Project>

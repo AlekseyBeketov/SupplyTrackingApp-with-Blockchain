@@ -1,0 +1,70 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+    margin: 0; /* Убираем отступы по краям */
+    padding: 0; /* Убираем внутренние отступы */
+}
+
+/* Устанавливаем отступы для таблицы */
+.table {
+    width: 100%;
+    border: 5px solid #fff;
+    border-top: 5px solid #fff;
+    border-bottom: 3px solid #fff;
+    border-collapse: collapse;
+    outline: 3px solid #002F55; 
+    font-size: 15px;
+    background: #002F55 !important; /* Фоновый цвет для всей таблицы */
+}
+
+.table th {
+    color:white;
+    font-weight: bold;
+    padding: 7px;
+    background: #002F55; /* Заменили желтый на #002F55 */
+    border: none;
+    text-align: left;
+    font-size: 15px;
+    border-top: 3px solid #fff;
+    border-bottom: 3px solid #002F55; /* Заменили желтый на #002F55 */
+}
+
+.table td {
+    color:#002F55;
+    padding: 7px;
+    border: none;
+    border-top: 3px solid #fff;
+    border-bottom: 3px solid #fff;
+    font-size: 15px;
+    background: white; /* Заменили желтый на #002F55 */
+}
+
+#auto-expanding-textarea {
+    width: 300px; /* Фиксированная ширина */
+    min-height: 38px; /* Минимальная высота, чтобы выглядело как input */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 16px;
+    resize: none; /* Отключаем стандартное расширение */
+    overflow: hidden; /* Скрываем полосу прокрутки */
+}
