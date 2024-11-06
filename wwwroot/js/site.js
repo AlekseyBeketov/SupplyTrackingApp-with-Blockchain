@@ -107,6 +107,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Подпись данных
                 const signature = await signData(JSON.stringify(batchData), keyPair.privateKey);
 
+
+
                 // Отправка данных в MongoDB
                 const saveResponse = await fetch('/Tracking/SaveBatch', {
                     method: 'POST',
@@ -118,6 +120,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const saveResult = await saveResponse.json();
 
+                // Подготовка данных для отправки
+                const createBlockchainRequest = {
+                    BatchId: saveResult.batchId, // Укажите реальный BatchId
+                    UserGroupId: saveResult.userGroupId, // Укажите реальный UserGroupId
+                    UserId: saveResult.userId, // Укажите реальный UserId
+                    DetailsOrder: details,
+                    Signature: btoa(String.fromCharCode(...new Uint8Array(signature)))
+                };
+
+                const requestWithBatch = {
+                    Request: createBlockchainRequest,
+                    Batch: batchData
+                };
+
                 if (saveResult.success) {
                     // Вызываем метод CreateBlockchain
                     const createBlockchainResponse = await fetch('/Tracking/CreateBlockhain', {
@@ -125,13 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            batchId: saveResult.batchId,
-                            userGroupId: saveResult.userGroupId,
-                            userId: saveResult.userId,
-                            detailsOrder: details,
-                            signature: btoa(String.fromCharCode(...new Uint8Array(signature)))
-                        })
+                        body: JSON.stringify(requestWithBatch)
                     });
 
                     if (createBlockchainResponse.ok) {

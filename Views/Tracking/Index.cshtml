@@ -99,6 +99,11 @@
 
 }
 
+@if (User.IsInRole("vendor"))
+{
+    <p>Это специальный контент только для компаний-производителей.</p>
+}
+
 @foreach (var user in Model.Users)
 {
     <p>

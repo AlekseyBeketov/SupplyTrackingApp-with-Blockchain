@@ -8,6 +8,7 @@ using JavaScriptEngineSwitcher.Core;
 using JavaScriptEngineSwitcher.Jint;
 using System.Text;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 
 namespace Blockchain_Supply_Chain_Tracking_System.Controllers
@@ -27,6 +28,11 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
         public int UserId { get; set; }
         public string DetailsOrder { get; set; }
         public string Signature { get; set; }
+    }
+    public class CreateBlockchainRequestWithBatch
+    {
+        public CreateBlockchainRequest Request { get; set; }
+        public Batch Batch { get; set; }
     }
 
     public class TrackingController : Controller
@@ -59,7 +65,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
             // Получаем всех пользователей
             List<User> users = _supplyTrackingContext.Users.ToList();
-            List<Blockchainblock> blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
+            //List<Blockchainblock> blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
             // Получаем всех вендоров из таблицы Vendors
             List<Vendor> vendors = _supplyTrackingContext.Vendors.ToList();
             List<Vendorproduct> vendorproduct = _supplyTrackingContext.Vendorproducts.ToList();
@@ -75,6 +81,41 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             ViewBag.SelectedVendor = selectedVendor;
             ViewBag.SelectedVendorDetails = selectedVendorDetails;
             ViewBag.VendorProducts = selectetVendorProducts;
+
+            int UserId = 0;
+            string UserType = "";
+            // Получение ID пользователя, создающего партию
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                var userTypeClaim = User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.Role);
+                if (userIdClaim != null)
+                {
+                   UserId = int.Parse(userIdClaim.Value);
+                   UserType = (userTypeClaim.Value).ToString();
+                }
+            }
+
+            //List<UserGroup> groups = await _mongoUserGroupService.GetAllUsersAsync();
+            List<string> userGroupIds = await _mongoUserGroupService.GetUserGroupIdsByConditionAsync(u => u.UserIds.Contains(UserId));
+            List<Blockchainid> blockchainids = new List<Blockchainid>();
+            List<Blockchainblock> blockchain = new List<Blockchainblock>();
+            foreach (var groupId in userGroupIds)
+            {
+                var matchingBlockchainids = _supplyTrackingContext.Blockchainids.Where(b => b.Usergroupid == groupId).ToList();
+                blockchainids.AddRange(matchingBlockchainids);
+            }
+            foreach (var blockchainid in blockchainids)
+            {
+                blockchain.AddRange(_supplyTrackingContext.Blockchainblocks.Where(b => b.Blockchainid == blockchainid.Blockchainid1).ToList());
+            }
+            
+            if (UserType == "admin")
+            {
+                blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
+            }
+
+
 
             var viewModel = new TrackingModel
             {
@@ -107,11 +148,12 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                     await _mongoBatchService.SaveBatchAsync(batch);
 
                     int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
+                    int userVendorId = (int)_supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == vendorId).Userid;
 
                     // Создание записи в UserGroup после успешного создания Batch
                     var userGroup = new UserGroup
                     {
-                        UserIds = new List<int> { batch.UserId, vendorId } // Добавляем UserId пользователя, создавшего партию и VendorId
+                        UserIds = new List<int> { batch.UserId, userVendorId } // Добавляем UserId пользователя, создавшего партию и VendorId
                     };
 
                     // Сохранение UserGroup в MongoDB
@@ -131,12 +173,15 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
 
         [HttpPost]
-        public IActionResult CreateBlockhain([FromBody] CreateBlockchainRequest request)
+        public IActionResult CreateBlockhain([FromBody] CreateBlockchainRequestWithBatch requestWithBatch)
         {
-            if (request == null)
+            if (requestWithBatch == null || requestWithBatch.Request == null || requestWithBatch.Batch == null)
             {
-                return BadRequest("Request body is null");
+                return BadRequest("Request body is null or incomplete");
             }
+
+            var request = requestWithBatch.Request;
+            var batch = requestWithBatch.Batch;
 
             Console.WriteLine($"Received BatchId: {request.BatchId}, UserGroupId: {request.UserGroupId}, UserId: {request.UserId}, DetailsOrder: {request.DetailsOrder}");
 
@@ -146,7 +191,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             // Создание генезис-блока
             blockchain = new List<Blockchainblock>();
             difficulty = 4;
-            CreateGenesisBlock(request.BatchId, request.UserId, request.DetailsOrder);
+            int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
+            int clientId = _supplyTrackingContext.Clients.FirstOrDefault(c => c.Userid == request.UserId).Clientid;
+            CreateGenesisBlock(request.BatchId, request.UserId, request.DetailsOrder, vendorId, clientId);
 
             foreach (var block in blockchain)
             {
@@ -157,11 +204,11 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             return RedirectToAction("Index", new { selectedVendor = 1 });
         }
 
-        private void CreateGenesisBlock(string BatchId, int UserId, string DetailsOrder)
+        private void CreateGenesisBlock(string BatchId, int UserId, string DetailsOrder, int VendorId, int ClientId)
         {
             string blockchainId = BatchId;
-            int vendorId = 0;
-            int clientId = UserId;
+            int vendorId = VendorId;
+            int clientId = ClientId;
             int transporterId = 0;
             int userId = UserId;
             string batchId = BatchId;
