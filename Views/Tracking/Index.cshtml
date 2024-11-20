@@ -5,37 +5,79 @@
     <p>Это специальный контент только для администраторов.</p>
 }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Blockchain ID</th>
-            <th>Vendor ID</th>
-            <th>Client ID</th>
-            <th>Transporter ID</th>
-            <th>User ID</th>
-            <th>Event Type</th>
-            <th>Location</th>
-            <th>Car Number</th>
-            <th>Event Details</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var block in Model.Blockchainblocks)
+@foreach (var blockIds in Model.Blockchainids)
+{
+    if (Model.UserGroups.Any(ug => ug.GroupId == blockIds.Usergroupid))
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Blockchain ID</th>
+                    <th>Vendor ID</th>
+                    <th>Client ID</th>
+                    <th>Transporter ID</th>
+                    <th>User ID</th>
+                    <th>Event Type</th>
+                    <th>Location</th>
+                    <th>Car Number</th>
+                    <th>Event Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var block in Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1))
+                {
+                    <tr>
+                        <td>@block.Blockchainid</td>
+                        <td>@block.Vendorid</td>
+                        <td>@block.Clientid</td>
+                        <td>@block.Transporterid</td>
+                        <td>@block.Userid</td>
+                        <td>@block.Eventtype</td>
+                        <td>@block.Location</td>
+                        <td>@block.Carnumber</td>
+                        <td>@block.Eventdetails</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (User.IsInRole("vendor"))
         {
-            <tr>
-                <td>@block.Blockchainid</td>
-                <td>@block.Vendorid</td>
-                <td>@block.Clientid</td>
-                <td>@block.Transporterid</td>
-                <td>@block.Userid</td>
-                <td>@block.Eventtype</td>
-                <td>@block.Location</td>
-                <td>@block.Carnumber</td>
-                <td>@block.Eventdetails</td>
-            </tr>
+            <p>Это специальный контент только для производетелей.</p>
+            <!-- Новый аккордеон для выбора транспортировщика -->
+            <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+                <div class="card">
+                    <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+                                <h3>Выбрать транспортировщика ▼</h3>
+                            </button>
+                        </h5>
+                    </div>
+
+                    <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+                        <div class="card-body">
+                            <form asp-action="AssignTransporter" method="post">
+                                <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+                                <select class="form-select" id="transporterSelect_@blockIds.Blockchainid1" name="selectedTransporter" style="width:250px; height:50px">
+                                    @foreach (var transporter in Model.Transporters)
+                                    {
+                                        <option value="@transporter.Transporterid">@transporter.Transportername (@transporter.Phone)</option>
+                                    }
+                                </select>
+
+
+                                <button type="submit" class="btn btn-primary mt-2">Назначить транспортировщика</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
-    </tbody>
-</table>
+    }
+}
+
+
 
 @if (User.IsInRole("client"))
 {
@@ -99,15 +141,37 @@
 
 }
 
-@if (User.IsInRole("vendor"))
-{
-    <p>Это специальный контент только для компаний-производителей.</p>
-}
+<h5>Объединенные цепочки блоков</h5>
 
-@foreach (var user in Model.Users)
-{
-    <p>
-        @user.Userid @user.Username @user.Passwordhash @user.Role
-    </p>
-}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Blockchain ID</th>
+            <th>Vendor ID</th>
+            <th>Client ID</th>
+            <th>Transporter ID</th>
+            <th>User ID</th>
+            <th>Event Type</th>
+            <th>Location</th>
+            <th>Car Number</th>
+            <th>Event Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var block in Model.Blockchainblocks)
+        {
+            <tr>
+                <td>@block.Blockchainid</td>
+                <td>@block.Vendorid</td>
+                <td>@block.Clientid</td>
+                <td>@block.Transporterid</td>
+                <td>@block.Userid</td>
+                <td>@block.Eventtype</td>
+                <td>@block.Location</td>
+                <td>@block.Carnumber</td>
+                <td>@block.Eventdetails</td>
+            </tr>
+        }
+    </tbody>
+</table>
 

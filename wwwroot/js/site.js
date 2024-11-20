@@ -25,6 +25,27 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('accordionOpen', 'false');
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+        const transportAccordionState = localStorage.getItem('transportAccordionOpen');
+        const transportCollapseElements = document.querySelectorAll('[id^="collapseTransporter_"]');
+
+        transportCollapseElements.forEach(collapseElement => {
+            if (transportAccordionState === 'true') {
+                collapseElement.classList.add('show');
+            }
+
+            collapseElement.addEventListener('show.bs.collapse', () => {
+                localStorage.setItem('transportAccordionOpen', 'true');
+            });
+
+            collapseElement.addEventListener('hide.bs.collapse', () => {
+                localStorage.setItem('transportAccordionOpen', 'false');
+            });
+        });
+    });
+
+
+
     // Обработчик для селектора производителя
     document.getElementById('vendorSelect').addEventListener('change', function () {
         localStorage.setItem('accordionOpen', 'true'); // Сохраняем состояние как открытое перед отправкой формы

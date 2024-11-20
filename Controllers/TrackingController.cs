@@ -9,6 +9,8 @@ using JavaScriptEngineSwitcher.Jint;
 using System.Text;
 using System.Security.Cryptography;
 using System.Diagnostics;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Blockchain_Supply_Chain_Tracking_System.Controllers
@@ -19,6 +21,10 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
         public List<Vendor> Vendors { get; set; }
         public List<Vendorproduct> VendorProducts { get; set; }
         public List<Blockchainblock> Blockchainblocks { get; set; }
+        public List<Blockchainid> Blockchainids { get; set; }
+        public List<UserGroup> UserGroups { get; set; }
+        public List<Transporter> Transporters{ get; set; } 
+
     }
 
     public class CreateBlockchainRequest
@@ -69,7 +75,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             // Получаем всех вендоров из таблицы Vendors
             List<Vendor> vendors = _supplyTrackingContext.Vendors.ToList();
             List<Vendorproduct> vendorproduct = _supplyTrackingContext.Vendorproducts.ToList();
-
+            List<Transporter> transporters = _supplyTrackingContext.Transporters.ToList();
             Vendor selectedVendorDetails = _supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == selectedVendor);
             List<Vendorproduct> selectetVendorProducts = _supplyTrackingContext.Vendorproducts.Where(p => p.Vendorid == selectedVendor).ToList();
 
@@ -97,12 +103,15 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             }
 
             //List<UserGroup> groups = await _mongoUserGroupService.GetAllUsersAsync();
-            List<string> userGroupIds = await _mongoUserGroupService.GetUserGroupIdsByConditionAsync(u => u.UserIds.Contains(UserId));
+            List<UserGroup> userGroupIds = await _mongoUserGroupService.GetUserGroupsByConditionAsync(u => u.UserIds.Contains(UserId));
             List<Blockchainid> blockchainids = new List<Blockchainid>();
             List<Blockchainblock> blockchain = new List<Blockchainblock>();
             foreach (var groupId in userGroupIds)
             {
-                var matchingBlockchainids = _supplyTrackingContext.Blockchainids.Where(b => b.Usergroupid == groupId).ToList();
+                var matchingBlockchainids = _supplyTrackingContext.Blockchainids
+                    .Where(b => b.Usergroupid == groupId.GroupId) // Сравнение с GroupId
+                    .ToList();
+
                 blockchainids.AddRange(matchingBlockchainids);
             }
             foreach (var blockchainid in blockchainids)
@@ -122,7 +131,10 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 Users = users,
                 Vendors = vendors,
                 VendorProducts = vendorproduct,
-                Blockchainblocks = blockchain
+                Blockchainblocks = blockchain,
+                Blockchainids = blockchainids,
+                UserGroups = userGroupIds,
+                Transporters = transporters
             };
 
             return View(viewModel);
@@ -170,6 +182,20 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
             return Json(new { success = false, message = "Error: No data to save" });
         }
+
+        /*
+        [HttpPost]
+        public IActionResult AssignTransporter(int blockchainId, int selectedTransporter)
+        {
+            var blockchain = _supplyTrackingContext.Blockchainblocks.FirstOrDefault(b => b.Blockchainid == blockchainId);
+            if (blockchain != null)
+            {
+                blockchain.Transporterid = selectedTransporter;
+                _dbContext.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
+        */
 
 
         [HttpPost]

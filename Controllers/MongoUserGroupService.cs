@@ -25,13 +25,14 @@ namespace Blockchain_Supply_Chain_Tracking_System.Services
         {
             return await _userGroupCollection.Find(_ => true).ToListAsync();
         }
-        public async Task<List<string>> GetUserGroupIdsByConditionAsync(Expression<Func<UserGroup, bool>> condition)
+        public async Task<List<UserGroup>> GetUserGroupsByConditionAsync(Expression<Func<UserGroup, bool>> condition)
         {
+            // Применяем фильтр для выбора записей, соответствующих условию
             var filter = Builders<UserGroup>.Filter.Where(condition);
-            var projection = Builders<UserGroup>.Projection.Include(u => u.GroupId);
-            var result = await _userGroupCollection.Find(filter).Project(projection).ToListAsync();
 
-            return result.Select(u => u["_id"].AsObjectId.ToString()).Distinct().ToList();
+            // Выполняем запрос и возвращаем полный список документов
+            return await _userGroupCollection.Find(filter).ToListAsync();
         }
+
     }
 }
