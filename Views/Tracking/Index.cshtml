@@ -1,88 +1,13 @@
-﻿@model Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@model Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
 
 @if (User.IsInRole("admin"))
 {
     <p>Это специальный контент только для администраторов.</p>
 }
 
-@foreach (var blockIds in Model.Blockchainids)
-{
-    if (Model.UserGroups.Any(ug => ug.GroupId == blockIds.Usergroupid))
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Blockchain ID</th>
-                    <th>Vendor ID</th>
-                    <th>Client ID</th>
-                    <th>Transporter ID</th>
-                    <th>User ID</th>
-                    <th>Event Type</th>
-                    <th>Location</th>
-                    <th>Car Number</th>
-                    <th>Event Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var block in Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1))
-                {
-                    <tr>
-                        <td>@block.Blockchainid</td>
-                        <td>@block.Vendorid</td>
-                        <td>@block.Clientid</td>
-                        <td>@block.Transporterid</td>
-                        <td>@block.Userid</td>
-                        <td>@block.Eventtype</td>
-                        <td>@block.Location</td>
-                        <td>@block.Carnumber</td>
-                        <td>@block.Eventdetails</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        @if (User.IsInRole("vendor"))
-        {
-            <p>Это специальный контент только для производетелей.</p>
-            <!-- Новый аккордеон для выбора транспортировщика -->
-            <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
-                <div class="card">
-                    <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
-                        <h5 class="mb-0">
-                            <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
-                                <h3>Выбрать транспортировщика ▼</h3>
-                            </button>
-                        </h5>
-                    </div>
-
-                    <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
-                        <div class="card-body">
-                            <form asp-action="AssignTransporter" method="post">
-                                <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
-                                <select class="form-select" id="transporterSelect_@blockIds.Blockchainid1" name="selectedTransporter" style="width:250px; height:50px">
-                                    @foreach (var transporter in Model.Transporters)
-                                    {
-                                        <option value="@transporter.Transporterid">@transporter.Transportername (@transporter.Phone)</option>
-                                    }
-                                </select>
-
-
-                                <button type="submit" class="btn btn-primary mt-2">Назначить транспортировщика</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    }
-}
-
-
-
 @if (User.IsInRole("client"))
 {
-    <p>Это специальный контент только для клиентов.</p>
-    <!-- Аккордеон -->
     <div class="accordion" id="newOrderAccordion">
         <div class="card">
             <div class="card-header" id="headingOne">
@@ -129,49 +54,246 @@
                             <button type="button" class="btn btn-danger removeProduct" style="display:none">Удалить</button>
                         </div>
                     </div>
-                    <h5>Детали заказа:</h5>
+                    <h5>Комментарий:</h5>
                     <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea"></textarea>
 
-                    <h5><div id="addedProductsContainer"></div></h5>
+                    <div id="addedProductsContainer"></div>
                     <button type="button" id="sendBatchButton" class="btn btn-success">Отправить</button>
                 </div>
             </div>
         </div>
     </div>
-
+    <br/>
 }
 
-<h5>Объединенные цепочки блоков</h5>
+@foreach (var blockIds in Model.Blockchainids)
+{
+    if (Model.UserGroups.Any(ug => ug.GroupId == blockIds.Usergroupid))
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Blockchain ID</th>
+                    <th>Производитель</th>
+                    <th>Клиент</th>
+                    <th>Транспортировщик</th>
+                    <th>User ID</th>
+                    <th>Событие</th>
+                    <th>Местоположение</th>
+                    <th>Номер машины</th>
+                    <th>Детали события</th>
+                </tr>
+            </thead>
+            <tbody>
+                @await Html.PartialAsync("_BlockchainTableBody", new Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
+                   {
+                       Blockchainblocks = Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).ToList(),
+                       Vendors = Model.Vendors,
+                       Clients = Model.Clients,
+                       Transporters = Model.Transporters,
+                       Users = Model.Users,
+                   })
+            </tbody>
+        </table>
+        
+        var lastBlockEventType = Model?.Blockchainblocks
+            .Where(b => b.Blockchainid == blockIds.Blockchainid1)
+            .OrderByDescending(b => b.Blockid)
+            ?.FirstOrDefault().Eventtype;
 
+        var carNumber = Model?.Blockchainblocks
+            .Where(b => b.Blockchainid == blockIds.Blockchainid1 && b.Carnumber != "0")
+            .OrderBy(b => b.Blockid)
+            .LastOrDefault()?.Carnumber ?? "";
+
+        @if (User.IsInRole("vendor"))
+        {
+            @if (!Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && b.Eventtype == "Ожидание транспортировки"))
+            {
+                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+                    <div class="card">
+                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+                                    <h3>Выбрать транспортировщика ▼</h3>
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+                            <div class="card-body">
+                                <form asp-action="AssignTransporter" method="post">
+                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+                                    <select class="form-select" id="transporterSelect_@blockIds.Blockchainid1" name="selectedTransporter" style="width:250px; height:50px" onchange="updateSelectedTransporter(this, '@blockIds.Blockchainid1');">
+                                        @foreach (var transporter in Model.Transporters)
+                                        {
+                                            <option value="@transporter.Transporterid">@transporter.Transportername (@transporter.Phone)</option>
+                                        }
+                                    </select>
+
+                                    <input type="hidden" id="selectedTransporter_@blockIds.Blockchainid1" name="selectedTransporter" value="" />
+                                    <h5 id="selectedTransporterDisplay_@blockIds.Blockchainid1"></h5>
+
+                                    <h5>Комментарий:</h5>
+                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
+                                    <input type="hidden" id="detailsInput_@blockIds.Blockchainid1" name="details" value="" />
+
+                                    <script>
+                                        function updateSelectedTransporter(selectElement, blockchainId) {
+                                            var selectedValue = selectElement.value;
+                                            var selectedText = selectElement.options[selectElement.selectedIndex].text;
+                                            document.getElementById('selectedTransporterDisplay_' + blockchainId).innerText = 'Выбранный транспортировщик: ' + selectedText;
+                                            document.getElementById('selectedTransporter_' + blockchainId).value = selectedValue;
+                                        }
+
+                                        function updateDetails(textareaElement, blockchainId) {
+                                            var detailsValue = textareaElement.value;
+                                            document.getElementById('detailsInput_' + blockchainId).value = detailsValue;
+                                        }
+                                    </script>
+
+                                    <button type="submit" class="btn btn-primary mt-2">Назначить транспортировщика</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @if (User.IsInRole("carrier"))
+        {
+            @if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Ожидание транспортировки" || lastBlockEventType == "Транспортировка"))
+            {
+                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+                    <div class="card">
+                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+                                    <h3>Изменить статус доставки заказа ▼</h3>
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+                            <div class="card-body">
+                                <form asp-action="TransporterRecords" method="post">
+                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+                                    <h5>Статус заказа:</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="orderStatus" id="statusTransportation_@blockIds.Blockchainid1" value="Транспортировка" checked>
+                                        <label class="form-check-label" for="statusTransportation_@blockIds.Blockchainid1">
+                                            Транспортировка
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="orderStatus" id="statusDelivered_@blockIds.Blockchainid1" value="Заказ доставлен">
+                                        <label class="form-check-label" for="statusDelivered_@blockIds.Blockchainid1">
+                                            Заказ доставлен
+                                        </label>
+                                    </div>
+
+                                    <h5>Номер машины:</h5>
+                                    <textarea placeholder="Укажите реальный номер машины" class="form-control carNumberInput" id="carNumberInputTextarea_@blockIds.Blockchainid1" oninput="updateCarNumber(this, '@blockIds.Blockchainid1');" required>@carNumber</textarea>
+                                    <input type="hidden" id="carNumberInputHidden_@blockIds.Blockchainid1" name="carNumber" value="@carNumber"/>
+
+                                    <h5>Местоположение:</h5>
+                                    <textarea placeholder="Укажите, где сейчас находится заказ" class="form-control locationInput" id="locationInputTextarea_@blockIds.Blockchainid1" oninput="updateLocation(this, '@blockIds.Blockchainid1');"></textarea>
+                                    <input type="hidden" id="locationInputHidden_@blockIds.Blockchainid1" name="location" value="" />
+
+                                    <h5>Комментарий:</h5>
+                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
+                                    <input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+
+                                    <script>
+                                        function updateDetails(textareaElement, blockchainId) {
+                                            var detailsValue = textareaElement.value;
+                                            document.getElementById('detailsInputHidden_' + blockchainId).value = detailsValue;
+                                        }
+
+                                        function updateLocation(textareaElement, blockchainId) {
+                                            var locationValue = textareaElement.value;
+                                            document.getElementById('locationInputHidden_' + blockchainId).value = locationValue;
+                                        }
+
+                                        function updateCarNumber(textareaElement, blockchainId) {
+                                            var carNumberValue = textareaElement.value;
+                                            document.getElementById('carNumberInputHidden_' + blockchainId).value = carNumberValue;
+                                        }
+                                    </script>
+
+                                    <button type="submit" class="btn btn-primary mt-2">Применить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        @if (User.IsInRole("client"))
+        {
+            @if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Заказ доставлен"))
+            {
+                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+                    <div class="card">
+                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+                                    <h3>Подробнее ▼</h3>
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+                            <div class="card-body">
+                                <form asp-action="ClientFinalStage" method="post">
+                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+                                    <h5>Статус заказа:</h5>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="orderType" id="statusGet_@blockIds.Blockchainid1" value="Получен" checked>
+                                        <label class="form-check-label" for="statusGet_@blockIds.Blockchainid1">
+                                            Получен
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="orderType" id="statusGetWithProblems_@blockIds.Blockchainid1" value="Получен, но есть претензии">
+                                        <label class="form-check-label" for="statusGetWithProblems_@blockIds.Blockchainid1">
+                                            Получен, но есть претензии
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="orderType" id="statusCansel_@blockIds.Blockchainid1" value="Отказ от товаров">
+                                        <label class="form-check-label" for="statusCansel_@blockIds.Blockchainid1">
+                                            Отказ от товаров
+                                        </label>
+                                    </div>
+
+                                    <h5>Комментарий:</h5>
+                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
+                                    <input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+
+                                    <script>
+                                        function updateDetails(textareaElement, blockchainId) {
+                                            var detailsValue = textareaElement.value;
+                                            document.getElementById('detailsInputHidden_' + blockchainId).value = detailsValue;
+                                        }
+                                    </script>
+
+                                    <button type="submit" class="btn btn-primary mt-2">Отправить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+}
+
+<h4>Объединенные цепочки блоков</h4>
 <table class="table">
     <thead>
-        <tr>
-            <th>Blockchain ID</th>
-            <th>Vendor ID</th>
-            <th>Client ID</th>
-            <th>Transporter ID</th>
-            <th>User ID</th>
-            <th>Event Type</th>
-            <th>Location</th>
-            <th>Car Number</th>
-            <th>Event Details</th>
-        </tr>
+        @await Html.PartialAsync("_BlockchainTableHead")
     </thead>
     <tbody>
-        @foreach (var block in Model.Blockchainblocks)
-        {
-            <tr>
-                <td>@block.Blockchainid</td>
-                <td>@block.Vendorid</td>
-                <td>@block.Clientid</td>
-                <td>@block.Transporterid</td>
-                <td>@block.Userid</td>
-                <td>@block.Eventtype</td>
-                <td>@block.Location</td>
-                <td>@block.Carnumber</td>
-                <td>@block.Eventdetails</td>
-            </tr>
-        }
+        @await Html.PartialAsync("_BlockchainTableBody", Model)
     </tbody>
 </table>
-

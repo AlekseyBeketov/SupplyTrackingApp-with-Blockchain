@@ -78,11 +78,11 @@
           }
         }
       },
-      "JavaScriptEngineSwitcher.Jint/3.27.2": {
+      "JavaScriptEngineSwitcher.Jint/3.27.3": {
         "type": "package",
         "dependencies": {
           "JavaScriptEngineSwitcher.Core": "3.24.1",
-          "Jint": "4.0.2"
+          "Jint": "4.1.0"
         },
         "compile": {
           "lib/net8.0/JavaScriptEngineSwitcher.Jint.dll": {
@@ -1255,17 +1255,17 @@
         "readme.txt"
       ]
     },
-    "JavaScriptEngineSwitcher.Jint/3.27.2": {
-      "sha512": "ZXN4uVW91Gm3QGbZ6FHw/8a6Bpraxg0WBKIYjf+d4sHFda+uPqAzS8xZloe6My94shRMt2rrNXC0vzBRq7/exQ==",
+    "JavaScriptEngineSwitcher.Jint/3.27.3": {
+      "sha512": "BOfaQXCTdAdD0S0fH+GaxNapBXgYp6VMIJkOfQ+p7VfdpB9oxB1jEVGsdBluxQzp+iVsY+YCMNISW3+xxtIEAg==",
       "type": "package",
-      "path": "javascriptengineswitcher.jint/3.27.2",
+      "path": "javascriptengineswitcher.jint/3.27.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "PACKAGE-DESCRIPTION.md",
         "icon.png",
-        "javascriptengineswitcher.jint.3.27.2.nupkg.sha512",
+        "javascriptengineswitcher.jint.3.27.3.nupkg.sha512",
         "javascriptengineswitcher.jint.nuspec",
         "jint-license.txt",
         "lib/net462/JavaScriptEngineSwitcher.Jint.dll",
@@ -3011,7 +3011,8 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "JavaScriptEngineSwitcher.Jint >= 3.27.2",
+      "JavaScriptEngineSwitcher.Core >= 3.24.1",
+      "JavaScriptEngineSwitcher.Jint >= 3.27.3",
       "Jint >= 4.1.0",
       "Microsoft.EntityFrameworkCore >= 8.0.8",
       "Microsoft.EntityFrameworkCore.Tools >= 8.0.8",
@@ -3062,16 +3063,20 @@
       "restoreAuditProperties": {
         "enableAudit": "true",
         "auditLevel": "low",
-        "auditMode": "direct"
+        "auditMode": "all"
       }
     },
     "frameworks": {
       "net8.0": {
         "targetAlias": "net8.0",
         "dependencies": {
+          "JavaScriptEngineSwitcher.Core": {
+            "target": "Package",
+            "version": "[3.24.1, )"
+          },
           "JavaScriptEngineSwitcher.Jint": {
             "target": "Package",
-            "version": "[3.27.2, )"
+            "version": "[3.27.3, )"
           },
           "Jint": {
             "target": "Package",
@@ -3115,8 +3120,30 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "У пакета \"Microsoft.Extensions.Caching.Memory\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-qj66-m88j-hmgj (уровень серьезности: высокий уровень)",
+      "libraryId": "Microsoft.Extensions.Caching.Memory",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "У пакета \"System.Text.Json\" 8.0.4 есть известная уязвимость https://github.com/advisories/GHSA-8g4q-xg66-9fp4 (уровень серьезности: высокий уровень)",
+      "libraryId": "System.Text.Json",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

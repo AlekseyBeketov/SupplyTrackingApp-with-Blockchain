@@ -43,16 +43,20 @@
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
-          "auditMode": "direct"
+          "auditMode": "all"
         }
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "JavaScriptEngineSwitcher.Core": {
+              "target": "Package",
+              "version": "[3.24.1, )"
+            },
             "JavaScriptEngineSwitcher.Jint": {
               "target": "Package",
-              "version": "[3.27.2, )"
+              "version": "[3.27.3, )"
             },
             "Jint": {
               "target": "Package",
@@ -96,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

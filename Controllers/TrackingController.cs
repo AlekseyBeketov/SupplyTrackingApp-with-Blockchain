@@ -1,16 +1,14 @@
-﻿using Blockchain_Supply_Chain_Tracking_System.Models;
+﻿// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
+using Blockchain_Supply_Chain_Tracking_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Blockchain_Supply_Chain_Tracking_System.Services;
 using System.Security.Claims;
-using System.Linq;
 using JavaScriptEngineSwitcher.Core;
-using JavaScriptEngineSwitcher.Jint;
 using System.Text;
 using System.Security.Cryptography;
-using System.Diagnostics;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 
 
 namespace Blockchain_Supply_Chain_Tracking_System.Controllers
@@ -23,8 +21,8 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
         public List<Blockchainblock> Blockchainblocks { get; set; }
         public List<Blockchainid> Blockchainids { get; set; }
         public List<UserGroup> UserGroups { get; set; }
-        public List<Transporter> Transporters{ get; set; } 
-
+        public List<Transporter> Transporters{ get; set; }
+        public List<Client> Clients { get; set; }
     }
 
     public class CreateBlockchainRequest
@@ -45,9 +43,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
     {
         private readonly SupplyTrackingContext _supplyTrackingContext;
         private readonly MongoBatchService _mongoBatchService;
-        private readonly MongoUserGroupService _mongoUserGroupService; // Сервис для работы с коллекцией UserGroup
+        private readonly MongoUserGroupService _mongoUserGroupService; 
         private List<Blockchainblock> blockchain;
-        private int difficulty;
+        private int difficulty = 4;
         private IJsEngine jsEngine;
         public TrackingController(SupplyTrackingContext supplyTrackingContext, MongoBatchService mongoBatchService, MongoUserGroupService mongoUserGroupService)
         {
@@ -69,28 +67,23 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 ViewBag.PageFirstLoad = false;
             }
 
-            // Получаем всех пользователей
             List<User> users = _supplyTrackingContext.Users.ToList();
-            //List<Blockchainblock> blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
-            // Получаем всех вендоров из таблицы Vendors
             List<Vendor> vendors = _supplyTrackingContext.Vendors.ToList();
             List<Vendorproduct> vendorproduct = _supplyTrackingContext.Vendorproducts.ToList();
             List<Transporter> transporters = _supplyTrackingContext.Transporters.ToList();
+            List<Client> clients = _supplyTrackingContext.Clients.ToList();
             Vendor selectedVendorDetails = _supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == selectedVendor);
             List<Vendorproduct> selectetVendorProducts = _supplyTrackingContext.Vendorproducts.Where(p => p.Vendorid == selectedVendor).ToList();
 
-            // Получаем все партии из MongoDB
             List<Batch> batches = await _mongoBatchService.GetAllBatchesAsync();
             ViewBag.Batches = batches;
 
-            // Передаем данные в ViewBag для использования в представлении
             ViewBag.SelectedVendor = selectedVendor;
             ViewBag.SelectedVendorDetails = selectedVendorDetails;
             ViewBag.VendorProducts = selectetVendorProducts;
 
             int UserId = 0;
             string UserType = "";
-            // Получение ID пользователя, создающего партию
             if (User.Identity.IsAuthenticated)
             {
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
@@ -102,14 +95,13 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 }
             }
 
-            //List<UserGroup> groups = await _mongoUserGroupService.GetAllUsersAsync();
             List<UserGroup> userGroupIds = await _mongoUserGroupService.GetUserGroupsByConditionAsync(u => u.UserIds.Contains(UserId));
             List<Blockchainid> blockchainids = new List<Blockchainid>();
             List<Blockchainblock> blockchain = new List<Blockchainblock>();
             foreach (var groupId in userGroupIds)
             {
                 var matchingBlockchainids = _supplyTrackingContext.Blockchainids
-                    .Where(b => b.Usergroupid == groupId.GroupId) // Сравнение с GroupId
+                    .Where(b => b.Usergroupid == groupId.GroupId) 
                     .ToList();
 
                 blockchainids.AddRange(matchingBlockchainids);
@@ -124,8 +116,6 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
             }
 
-
-
             var viewModel = new TrackingModel
             {
                 Users = users,
@@ -134,7 +124,8 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 Blockchainblocks = blockchain,
                 Blockchainids = blockchainids,
                 UserGroups = userGroupIds,
-                Transporters = transporters
+                Transporters = transporters,
+                Clients = clients,
             };
 
             return View(viewModel);
@@ -147,7 +138,6 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             {
                 try
                 {
-                    // Получение ID пользователя, создающего партию
                     if (User.Identity.IsAuthenticated)
                     {
                         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
@@ -156,22 +146,19 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                             batch.UserId = int.Parse(userIdClaim.Value);
                         }
                     }
-                    // Сохранение партии в MongoDB
-                    await _mongoBatchService.SaveBatchAsync(batch);
+
 
                     int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
                     int userVendorId = (int)_supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == vendorId).Userid;
 
-                    // Создание записи в UserGroup после успешного создания Batch
                     var userGroup = new UserGroup
                     {
-                        UserIds = new List<int> { batch.UserId, userVendorId } // Добавляем UserId пользователя, создавшего партию и VendorId
+                        UserIds = new List<int> { batch.UserId, userVendorId } 
                     };
 
-                    // Сохранение UserGroup в MongoDB
+                    await _mongoBatchService.SaveBatchAsync(batch);
                     await _mongoUserGroupService.SaveUserGroupAsync(userGroup);
 
-                    // Возвращаем идентификаторы партии и группы пользователей
                     return Json(new { success = true, message = "Batch and UserGroup saved to MongoDB", batchId = batch.BatchId, userGroupId = userGroup.GroupId, userId = batch.UserId });
                 }
                 catch (Exception ex)
@@ -183,20 +170,73 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             return Json(new { success = false, message = "Error: No data to save" });
         }
 
-        /*
+        
         [HttpPost]
-        public IActionResult AssignTransporter(int blockchainId, int selectedTransporter)
+        public async Task<IActionResult> AssignTransporter(string blockchainId, int selectedTransporter, string details)
         {
-            var blockchain = _supplyTrackingContext.Blockchainblocks.FirstOrDefault(b => b.Blockchainid == blockchainId);
-            if (blockchain != null)
+            int userId = GetCurrentUserId();
+            var userGroupId = _supplyTrackingContext.Blockchainids
+                .FirstOrDefault(b => b.Blockchainid1 == blockchainId)?.Usergroupid;
+
+            var transporterUserId = _supplyTrackingContext.Transporters.FirstOrDefault(t => t.Transporterid == selectedTransporter).Userid;
+
+            if (string.IsNullOrEmpty(userGroupId))
             {
-                blockchain.Transporterid = selectedTransporter;
-                _dbContext.SaveChanges();
+                return Json(new { success = false, message = "UserGroupId not found for the given BlockchainId" });
             }
+
+            await _mongoUserGroupService.InsertIntoUserGroupAsync(userGroupId, transporterUserId ?? 0);
+            var firstBlock = _supplyTrackingContext.Blockchainblocks.FirstOrDefault(b => b.Blockchainid == blockchainId);
+
+            Blockchainblock newBlock = CreateBlock(blockchainId, firstBlock.Vendorid ?? 0, firstBlock.Clientid ?? 0,
+                selectedTransporter, userId, firstBlock.Batchid, "Ожидание транспортировки", firstBlock.Location,
+                firstBlock.Hash, "0", details, "publicKey");
+            MineBlock(newBlock);
+            _supplyTrackingContext.Blockchainblocks.Add(newBlock); 
+            await _supplyTrackingContext.SaveChangesAsync();
             return RedirectToAction("Index");
         }
-        */
 
+        [HttpPost]
+        public async Task<IActionResult> TransporterRecords(string blockchainId, string orderStatus, string carNumber, string location, string details)
+        {
+            int userId = GetCurrentUserId();
+            var oldBlock = _supplyTrackingContext.Blockchainblocks
+                .Where(b => b.Blockchainid == blockchainId)
+                .OrderBy(b => b.Blockid)
+                .LastOrDefault();
+
+            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock.Vendorid ?? 0, oldBlock.Clientid ?? 0,
+                oldBlock.Transporterid ?? 0, userId, oldBlock.Batchid, orderStatus, location ?? oldBlock.Location,
+                oldBlock.Hash, carNumber, details, "publicKey");
+            MineBlock(newBlock);
+            _supplyTrackingContext.Blockchainblocks.Add(newBlock);
+            await _supplyTrackingContext.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ClientFinalStage(string blockchainId, string orderType, string details)
+        {
+            int userId = GetCurrentUserId();
+            var oldBlock = _supplyTrackingContext.Blockchainblocks
+                .Where(b => b.Blockchainid == blockchainId)
+                .OrderBy(b => b.Blockid)
+                .LastOrDefault();
+
+            if (orderType == "Получен, но есть претензии")
+            {
+                details = "Заказ получен, но возникли проблемы. " + details;
+            }
+
+            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock.Vendorid ?? 0, oldBlock.Clientid ?? 0,
+                oldBlock.Transporterid ?? 0, userId, oldBlock.Batchid, "Сделка закрыта", oldBlock.Location,
+                oldBlock.Hash, oldBlock.Carnumber, details, "publicKey");
+            MineBlock(newBlock);
+            _supplyTrackingContext.Blockchainblocks.Add(newBlock);
+            await _supplyTrackingContext.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
 
         [HttpPost]
         public IActionResult CreateBlockhain([FromBody] CreateBlockchainRequestWithBatch requestWithBatch)
@@ -209,12 +249,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             var request = requestWithBatch.Request;
             var batch = requestWithBatch.Batch;
 
-            Console.WriteLine($"Received BatchId: {request.BatchId}, UserGroupId: {request.UserGroupId}, UserId: {request.UserId}, DetailsOrder: {request.DetailsOrder}");
-
             Blockchainid blockchainid = new Blockchainid { Blockchainid1 = request.BatchId, Usergroupid = request.UserGroupId };
             _supplyTrackingContext.Blockchainids.Add(blockchainid);
 
-            // Создание генезис-блока
             blockchain = new List<Blockchainblock>();
             difficulty = 4;
             int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
@@ -244,7 +281,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             string carNumber = "0";
             string eventDetails = DetailsOrder; 
             string publicKey = "хз";
-            Blockchainblock genesisBlock = CreateBlock(blockchainId, vendorId, clientId, transporterId, userId, batchId, eventType, location, previousHash, carNumber, eventDetails, publicKey); // Правильно передать параметры
+            Blockchainblock genesisBlock = CreateBlock(blockchainId, vendorId, clientId, transporterId, userId, batchId, eventType, location, previousHash, carNumber, eventDetails, publicKey);
             MineBlock(genesisBlock);
             blockchain.Add(genesisBlock);
         }
@@ -269,7 +306,6 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 Nonce = 0,
                 Publickey = publicKey
             };
-            Console.WriteLine($"Создан новый блок с данными: {blockchainId}");
             return block;
         }
 
@@ -291,7 +327,6 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
         private void MineBlock(Blockchainblock block)
         {
             string target = new string('0', difficulty);
-            Console.WriteLine($"Начало майнинга блока с данными: {block.Blockchainid}");
             try
             {
                 while (!block.Hash.StartsWith(target))
@@ -303,12 +338,24 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                         Console.WriteLine($"Майнинг... nonce: {block.Nonce}");
                     }
                 }
-                Console.WriteLine($"Блок успешно замайнен: {block.Hash}");
             }
             catch (ThreadInterruptedException)
             {
                 Console.WriteLine("Майнинг прерван пользователем.");
             }
+        }
+
+        private int GetCurrentUserId()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return userId;
+                }
+            }
+            return 0; 
         }
     }
 }

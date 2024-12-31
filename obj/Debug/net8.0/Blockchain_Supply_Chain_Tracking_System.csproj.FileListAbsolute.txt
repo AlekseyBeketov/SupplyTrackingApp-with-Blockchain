@@ -115,3 +115,4 @@ D:\Sources\Blockchain_Supply_Chain_Tracking_System\Blockchain_Supply_Chain_Track
 D:\Sources\Blockchain_Supply_Chain_Tracking_System\Blockchain_Supply_Chain_Tracking_System\bin\Debug\net8.0\Jint.dll
 D:\Sources\Blockchain_Supply_Chain_Tracking_System\Blockchain_Supply_Chain_Tracking_System\bin\Debug\net8.0\ru-RU\JavaScriptEngineSwitcher.Core.resources.dll
 D:\Sources\Blockchain_Supply_Chain_Tracking_System\Blockchain_Supply_Chain_Tracking_System\obj\Debug\net8.0\Blockchain_Supply_Chain_Tracking_System.sourcelink.json
+D:\Sources\Blockchain_Supply_Chain_Tracking_System\Blockchain_Supply_Chain_Tracking_System\bin\Debug\net8.0\Newtonsoft.Json.dll
