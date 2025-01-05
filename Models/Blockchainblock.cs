@@ -35,5 +35,6 @@ public partial class Blockchainblock
 
     public int? Nonce { get; set; }
 
+    public string? Signature { get; set; }
     public string? Publickey { get; set; }
 }

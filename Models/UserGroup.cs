@@ -9,6 +9,6 @@ namespace Blockchain_Supply_Chain_Tracking_System.Models
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string GroupId { get; set; }
-        public List<int> UserIds { get; set; } = new List<int>();  // Список пользователей, у которых есть доступ
+        public List<int> UserIds { get; set; } = new List<int>();
     }
 }

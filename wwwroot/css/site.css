@@ -1,70 +1,340 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
     margin-bottom: 60px;
-    margin: 0; /* ������� ������� �� ����� */
-    padding: 0; /* ������� ���������� ������� */
+    margin: 0;
+    padding: 0;
 }
 
-/* ������������� ������� ��� ������� */
-.table {
+body * {
+    border-radius: 0 !important;
+}
+
+    body input[type="radio"] {
+        border-radius: 50% !important; /* Закругление для радиокнопок */
+    }
+
+
+body .btn{
+    margin-top: 2px;
+}
+
+body .btn-outline-primary {
+    border-color: #002F55; /* Цвет границы кнопки */
+    color: #002F55;
+}
+
+body .form-group input{
+    margin-top: -10px;
+}
+
+    body .btn-outline-primary:hover {
+        background-color: #002F55; /* Цвет фона кнопки при наведении */
+        border-color: #002F55; /* Цвет границы кнопки при наведении */
+        color: white;
+    }
+
+    body .btn-outline-primary:focus, .btn-outline-primary.focus {
+        box-shadow: 0 0 0 0.2rem rgba(0, 47, 85, 0.5); /* Тень при фокусе */
+    }
+
+body .btn-primary {
+    background-color: #002F55; /* Цвет фона кнопки при наведении */
+    border-color: #002F55; /* Цвет границы кнопки при наведении */
+    color: white;
+}
+    body .btn-primary:hover {
+        background-color: white; /* Цвет фона кнопки при наведении */
+        border-color: #002F55; /* Цвет границы кнопки при наведении */
+        color: #002F55;
+    }
+
+    body .accordion .card {
+        border: 3px solid #002F55;
+        color: #002F55;
+    }
+
+    body .collapse.show .card-body .form-select {
+        border: 1px solid #002F55;
+        color: #002F55;
+    }
+
+    body .collapse.show .card-body .form-control {
+        border: 1px solid #002F55;
+        color: #002F55;
+    }
+
+    body .collapse.show .card-body #auto-expanding-textarea {
+        border: 1px solid #002F55;
+        color: #002F55;
+    }
+
+    body .card-header {
+        background-color: #002F55;
+    }
+
+    body .container {
+        color: #002F55;
+    }
+.table-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    border: 5px solid #fff;
-    border-top: 5px solid #fff;
-    border-bottom: 3px solid #fff;
-    border-collapse: collapse;
-    outline: 3px solid #002F55; 
-    font-size: 15px;
-    background: #002F55 !important; /* ������� ���� ��� ���� ������� */
+    box-sizing: border-box;
 }
 
-.table th {
-    color:white;
-    font-weight: bold;
-    padding: 7px;
-    background: #002F55; /* �������� ������ �� #002F55 */
-    border: none;
-    text-align: left;
-    font-size: 15px;
-    border-top: 3px solid #fff;
-    border-bottom: 3px solid #002F55; /* �������� ������ �� #002F55 */
+    .table-container .table {
+        width: 120%; /* Таблица теперь занимает 80% ширины экрана */
+        border: 5px solid #fff;
+        border-top: 5px solid #fff;
+        border-bottom: 3px solid #fff;
+        border-collapse: collapse;
+        outline: 3px solid #002F55;
+        font-size: 15px;
+        background: #002F55 !important;
+    }
+
+        .table-container .table th {
+            color: white;
+            font-weight: bold;
+            padding: 7px;
+            background: #002F55;
+            border: none;
+            text-align: left;
+            font-size: 15px;
+            border-top: 3px solid #fff;
+            border-bottom: 3px solid #002F55;
+        }
+
+        .table-container .table td {
+            color: #002F55;
+            padding: 7px;
+            border: none;
+            border-top: 3px solid #fff;
+            border-bottom: 3px solid #fff;
+            font-size: 15px;
+            background: white;
+            overflow-wrap: break-word; /* Перенос слов */
+            word-wrap: break-word;
+        }
+
+.blockchain-id-cell {
+    white-space: pre-wrap; /* Сохраняем форматирование */
+    word-break: break-word;
 }
 
-.table td {
-    color:#002F55;
-    padding: 7px;
-    border: none;
-    border-top: 3px solid #fff;
-    border-bottom: 3px solid #fff;
-    font-size: 15px;
-    background: white; /* �������� ������ �� #002F55 */
+.form-select {
+    margin-bottom: 2px;
+}
+
+h4 i {
+    vertical-align: -0.125em;
+    margin-right: 7px;
+}
+
+h5 i {
+    vertical-align: -0.125em;
+    margin-right: 5px;
+}
+
+.card-body .row .col.left {
+    color: #002F55;
+}
+
+.card-body .row .col.left h4{
+    margin-top: 5px;
+}
+
+.card-body .row .col.left h5{
+    margin-top: 5px;
+}
+
+.card-body .row .col.left .form-check{
+    margin-left: 5px;
+}
+
+.card-body .row .col.left .form-check .form-check-input{
+    border-color: #002F55;
+}
+
+.card-body .row .col.left .form-check .form-check-input:checked{
+    background-color: #002F55;
 }
 
 #auto-expanding-textarea {
-    width: 300px; /* ������������� ������ */
-    min-height: 38px; /* ����������� ������, ����� ��������� ��� input */
+    width: 300px;
+    min-height: 38px;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-family: inherit;
     font-size: 16px;
-    resize: none; /* ��������� ����������� ���������� */
-    overflow: hidden; /* �������� ������ ��������� */
+    resize: none;
+    overflow: hidden;
+}
+
+.custom-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 768px;
+    max-width: 100%;
+    margin: auto;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    padding: 20px;
+    height: 400px; /* Увеличена высота */
+}
+
+    /* Стили формы */
+    .custom-container .form-container {
+        width: 50%; /* 50% ширины контейнера */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        height: 100%; /* Занимает всю высоту контейнера */
+    }
+
+        .custom-container .form-container h1 {
+            color: #002F55;
+        }
+
+        .custom-container .form-container span {
+            color: #002F55;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .custom-container .form-container input {
+            border: 1px solid #002F55;
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%; /* Ширина полей ввода */
+        }
+
+        .custom-container .form-container button {
+            background-color: #002F55;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 20px; /* Отступ сверху для кнопки */
+        }
+
+            .custom-container .form-container button:hover {
+                background-color: #004080;
+            }
+
+    /* Стили для блока с текстом */
+    .custom-container .custom-text-container {
+        width: 50%; /* 50% ширины контейнера */
+        background-color: #002F55;
+        color: #fff;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        height: 100%; /* Занимает всю высоту контейнера */
+    }
+
+        .custom-container .custom-text-container h2 {
+            margin: 18px 0;
+        }
+
+        .custom-container .custom-text-container p {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+body#login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.navbar-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+    .navbar-centered .navbar-collapse {
+        flex-grow: 1; /* Растягиваем collapse на всю ширину */
+        justify-content: center; /* Центрируем содержимое по горизонтали */
+    }
+
+    .navbar-centered .navbar-nav {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .navbar-centered .nav-item {
+        margin-right: 27px;
+    }
+
+    .navbar-centered a {
+        color: #002F55 !important;
+        font-weight: 600;
+        font-size: large;
+        margin-right: 27px;
+    }
+
+.custom-row {
+    margin-bottom: 0; /* Убираем нижний отступ у строки */
+}
+
+.custom-col {
+    margin-top: -10px; /* Убираем нижний внутренний отступ у колонок */
+    padding-top: 0; /* Убираем верхний внутренний отступ у колонок */
+}
+
+.custom-mb {
+    margin-bottom: 0px; /* Убираем нижний внутренний отступ у колонок */
+}
+
+.user-col {
+    width: 12%;
+}
+
+.event-col {
+    width: 20%;
+}
+
+.location-col {
+    width: 20%;
+}
+
+.car-number-col {
+    width: 13%;
+}
+
+.event-details-col {
+    width: 35%;
 }

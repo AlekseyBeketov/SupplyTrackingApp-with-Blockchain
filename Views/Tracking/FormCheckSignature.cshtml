@@ -1,0 +1,52 @@
+﻿<form id="verifyForm" style="width: 300px">
+    <div class="form-group">
+        <p><b>Идентификатор блокчейна:</b></p>
+        <input type="text" id="blockchainId" name="blockchainId" class="form-control" required />
+    </div>
+    <div class="form-group">
+        <p><b>Номер блока:</b></p>
+        <input type="number" id="blockNumber" name="blockNumber" class="form-control" required />
+    </div>
+    <button type="button" id="verifyButton" class="btn btn-primary">Проверить подпись</button>
+</form>
+
+<div style ="margin-top: 10px;" id="verificationResult"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('verifyButton').addEventListener('click', function () {
+            verifyBlockSignature();
+        });
+    });
+
+    async function verifyBlockSignature() {
+        var blockchainId = document.getElementById('blockchainId').value;
+        var blockNumber = document.getElementById('blockNumber').value;
+
+        try {
+            const response = await fetch('/Tracking/VerifyBlockSignature', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ blockchainId: blockchainId, blockNumber: blockNumber })
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('verificationResult').innerHTML = '<div class="alert alert-success">Подпись верна!</div>';
+            } else {
+                document.getElementById('verificationResult').innerHTML = '<div class="alert alert-danger">Неверная подпись.</div>';
+            }
+        } catch (error) {
+            document.getElementById('verificationResult').innerHTML = '<div class="alert alert-danger">Произошла ошибка при проверке подписи.</div>';
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
+</script>

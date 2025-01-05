@@ -1,8 +1,5 @@
 ﻿using MongoDB.Driver;
 using Blockchain_Supply_Chain_Tracking_System.Models;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Linq.Expressions;
 using MongoDB.Bson;
 
@@ -14,7 +11,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Services
 
         public MongoUserGroupService(IMongoClient mongoClient)
         {
-            var database = mongoClient.GetDatabase("SupplyTrackingDb"); // Убедитесь, что имя БД корректное
+            var database = mongoClient.GetDatabase("SupplyTrackingDb");
             _userGroupCollection = database.GetCollection<UserGroup>("UserGroup");
         }
 
@@ -26,16 +23,10 @@ namespace Blockchain_Supply_Chain_Tracking_System.Services
         {
             try
             {
-                // Преобразование строки userGroupId в ObjectId
                 var objectId = new ObjectId(userGroupId);
-
-                // Строим фильтр для поиска документа по _id
                 var filter = Builders<UserGroup>.Filter.Eq("_id", objectId);
-
-                // Строим обновление для добавления transporterId в массив UserIds
                 var update = Builders<UserGroup>.Update.AddToSet(u => u.UserIds, transporterId);
 
-                // Выполняем обновление
                 var result = await _userGroupCollection.UpdateOneAsync(filter, update);
 
                 if (result.MatchedCount == 0)
@@ -59,12 +50,8 @@ namespace Blockchain_Supply_Chain_Tracking_System.Services
         }
         public async Task<List<UserGroup>> GetUserGroupsByConditionAsync(Expression<Func<UserGroup, bool>> condition)
         {
-            // Применяем фильтр для выбора записей, соответствующих условию
             var filter = Builders<UserGroup>.Filter.Where(condition);
-
-            // Выполняем запрос и возвращаем полный список документов
             return await _userGroupCollection.Find(filter).ToListAsync();
         }
-
     }
 }

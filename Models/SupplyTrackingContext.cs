@@ -68,8 +68,11 @@ public partial class SupplyTrackingContext : DbContext
             entity.Property(e => e.Previoushash)
                 .HasMaxLength(255)
                 .HasColumnName("previoushash");
+            entity.Property(e => e.Signature)
+                .HasMaxLength(500)
+                .HasColumnName("signature");
             entity.Property(e => e.Publickey)
-                .HasMaxLength(255)
+                .HasMaxLength(500)
                 .HasColumnName("publickey");
             entity.Property(e => e.Timestampblock)
                 .HasColumnType("timestamp without time zone")

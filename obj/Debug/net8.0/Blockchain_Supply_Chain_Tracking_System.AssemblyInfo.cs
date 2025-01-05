@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blockchain_Supply_Chain_Tracking_System")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3074e5c2d4aa070204b132531c3205c7a1e10f7a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13fd3e935b90b4d7df8434899b6db7d9c2c7fa77")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blockchain_Supply_Chain_Tracking_System")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blockchain_Supply_Chain_Tracking_System")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

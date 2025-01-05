@@ -3,7 +3,7 @@ using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Blockchain_Supply_Chain_Tracking_System.Services // Убедитесь, что пространство имен соответствует
+namespace Blockchain_Supply_Chain_Tracking_System.Services
 {
     public class MongoBatchService
     {
@@ -11,7 +11,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Services // Убедитесь
 
         public MongoBatchService(IMongoDatabase database)
         {
-            _batchCollection = database.GetCollection<Batch>("Batches"); // Имя вашей коллекции
+            _batchCollection = database.GetCollection<Batch>("Batches");
         }
 
         public async Task SaveBatchAsync(Batch batch)

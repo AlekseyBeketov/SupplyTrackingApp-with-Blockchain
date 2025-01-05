@@ -1,299 +1,510 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Rendering
-@model Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
+@using Newtonsoft.Json
+@model Blockchain_Supply_Chain_Tracking_System.Models.TrackingModel
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
 
 @if (User.IsInRole("admin"))
 {
-    <p>Это специальный контент только для администраторов.</p>
+	<p>Это специальный контент только для администраторов.</p>
+	<div class="table-container">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Идентификатор пользователя</th>
+					<th>Имя пользователя</th>
+					<th>Хеш пароля</th>
+					<th>Роль</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var user in Model.Users)
+				{
+					<tr>
+						<td>@user.Userid</td>
+						<td>@user.Username</td>
+						<td>@user.Passwordhash</td>
+						<td>@user.Role</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
 }
+
 
 @if (User.IsInRole("client"))
 {
-    <div class="accordion" id="newOrderAccordion">
-        <div class="card">
-            <div class="card-header" id="headingOne">
-                <h5 class="mb-0">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseOne">
-                        <h3>Сделать новый заказ ▼</h3>
-                    </button>
-                </h5>
-            </div>
+	<div class="accordion" id="newOrderAccordion">
+		<div class="card">
+			<div class="card-header" style="padding: 8px" id="headingOne">
+				<h5 class="mb-0">
+					<button class="btn menuha" type="button" data-toggle="collapse" data-target="#collapseOne" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseOne">
+						<h3 style="display: inline-flex; align-items: baseline; color: white">
+							Сделать новый заказ <i class="bi bi-caret-down-fill" style="margin-left: 5px;"></i>
+						</h3>
+					</button>
+				</h5>
+			</div>
 
-            <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#newOrderAccordion">
-                <div class="card-body">
-                    <h3>Выберите производителя</h3>
-                    <form asp-action="Index" method="post">
-                        <select class="form-select" id="vendorSelect" name="selectedVendor" style="width:250px; height:50px" onchange="this.form.submit()">
-                            @foreach (var vendor in Model.Vendors)
-                            {
-                                <option value="@vendor.Vendorid" selected="@(vendor.Vendorid == ViewBag.SelectedVendorDetails?.Vendorid ? "selected" : null)">
-                                    @vendor.Vendorname
-                                </option>
-                            }
-                        </select>
-                    </form>
+			<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#newOrderAccordion">
+				<div class="card-body">
+					<div class="row">
+						<div class="col left">
+							<h4 style="display: inline-flex; align-items: baseline;">
+								<i class="bi bi-briefcase-fill"></i>Производитель
+							</h4>
+							<form asp-action="Index" method="post">
+								<select class="form-select" id="vendorSelect" name="selectedVendor" style="width:250px; height:50px" onchange="this.form.submit()">
+									@foreach (var vendor in Model.Vendors)
+									{
+										<option value="@vendor.Vendorid" selected="@(vendor.Vendorid == ViewBag.SelectedVendorDetails?.Vendorid ? "selected" : null)">
+											@vendor.Vendorname
+										</option>
+									}
+								</select>
+							</form>
 
-                    @if (ViewBag.SelectedVendorDetails != null)
-                    {
-                        <h5>Адрес: @ViewBag.SelectedVendorDetails.Address</h5>
-                        <h5>Email: @ViewBag.SelectedVendorDetails.Email</h5>
-                        <h5>Телефон: @ViewBag.SelectedVendorDetails.Phone</h5>
-                    }
+							@if (ViewBag.SelectedVendorDetails != null)
+							{
+								<p class="custom-mb">
+									<i class="bi bi-pin-map-fill"></i>
+									<b>Адрес:</b> @ViewBag.SelectedVendorDetails.Address
+								</p>
 
-                    <div id="productContainer">
-                        <div class="productRow">
-                            <select class="form-select productSelect" name="selectedProduct" style="width:400px; height:50px">
-                                @foreach (var product in @ViewBag.VendorProducts)
-                                {
-                                    <option value="@product.Productid" selected="@(product.Productid == 1 ? "selected" : null)">
-                                        @product.Productname @product.Productweight гр., @product.Productprice ₽
-                                    </option>
-                                }
-                            </select>
-                            <input type="number" min="1" class="form-control quantityInput" name="quantity" style="width:100px; height:50px" placeholder="Количество">
-                            <button type="button" class="btn btn-primary addProduct">Добавить</button>
-                            <button type="button" class="btn btn-danger removeProduct" style="display:none">Удалить</button>
-                        </div>
-                    </div>
-                    <h5>Комментарий:</h5>
-                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea"></textarea>
+								<p class="custom-mb">
+									<i class="bi bi-envelope-fill"></i>
+									<b>Email:</b> @ViewBag.SelectedVendorDetails.Email
+								</p>
 
-                    <div id="addedProductsContainer"></div>
-                    <button type="button" id="sendBatchButton" class="btn btn-success">Отправить</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <br/>
+								<p class="custom-mb">
+									<i class="bi bi-telephone-fill"></i>
+									<b>Телефон:</b> @ViewBag.SelectedVendorDetails.Phone
+								</p>
+							}
+
+							<h4 style="display: inline-flex; align-items: baseline;">
+								<i class="bi bi-plus-circle-fill"></i>Добавить в заказ
+							</h4>
+
+							<div id="productContainer">
+								<div class="productRow" style="width:430px">
+									<select class="form-select productSelect" name="selectedProduct" style="height:50px">
+										@foreach (var product in @ViewBag.VendorProducts)
+										{
+											<option value="@product.Productid" selected="@(product.Productid == 1 ? "selected" : null)">
+												@product.Productname @product.Productweight гр., @product.Productprice ₽
+											</option>
+										}
+									</select>
+									<div class="row">
+										<div class="col-8">
+											<input type="number" min="1" class="form-control quantityInput" name="quantity" style="height:50px" placeholder="Количество">
+										</div>
+										<div class="col-4">
+											<button type="button" class="btn btn-outline-primary addProduct" style="height:50px;justify-content: flex-end; margin-left: 27px; margin-top:-1px">Добавить</button>
+										</div>
+									</div>
+									<button type="button" class="btn btn-outline-primary removeProduct" style="display:none">Удалить</button>
+								</div>
+							</div>
+							<h4 style="display: inline-flex; align-items: baseline;">
+								<i class="bi bi-chat-text-fill"></i>Комментарий
+							</h4>
+							<textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea"></textarea>
+						</div>
+
+						<div class="col">
+							<h4 style="display: inline-flex; align-items: baseline;">
+								<i class="bi bi-cart4"></i>Список продуктов
+							</h4>
+							<div id="addedProductsContainer"></div>
+						</div>
+					</div>
+					<input type="hidden" id="productQuantity" placeholder="Количество">
+					<button type="button" id="sendBatchButton" class="btn btn-primary" style="display: block; margin-left:auto; margin-right:auto; width:150px; margin-top:10px">Отправить</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<br />
 }
-
-@foreach (var blockIds in Model.Blockchainids)
+@if (Model.Blockchainblocks.FirstOrDefault() != default)
 {
-    if (Model.UserGroups.Any(ug => ug.GroupId == blockIds.Usergroupid))
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Blockchain ID</th>
-                    <th>Производитель</th>
-                    <th>Клиент</th>
-                    <th>Транспортировщик</th>
-                    <th>User ID</th>
-                    <th>Событие</th>
-                    <th>Местоположение</th>
-                    <th>Номер машины</th>
-                    <th>Детали события</th>
-                </tr>
-            </thead>
-            <tbody>
-                @await Html.PartialAsync("_BlockchainTableBody", new Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
-                   {
-                       Blockchainblocks = Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).ToList(),
-                       Vendors = Model.Vendors,
-                       Clients = Model.Clients,
-                       Transporters = Model.Transporters,
-                       Users = Model.Users,
-                   })
-            </tbody>
-        </table>
-        
-        var lastBlockEventType = Model?.Blockchainblocks
-            .Where(b => b.Blockchainid == blockIds.Blockchainid1)
-            .OrderByDescending(b => b.Blockid)
-            ?.FirstOrDefault().Eventtype;
+	<h2 style="margin-bottom: 17px">Отдельные цепочки поставок</h2>
 
-        var carNumber = Model?.Blockchainblocks
-            .Where(b => b.Blockchainid == blockIds.Blockchainid1 && b.Carnumber != "0")
-            .OrderBy(b => b.Blockid)
-            .LastOrDefault()?.Carnumber ?? "";
+	@foreach (var blockIds in Model.Blockchainids)
+	{
+		if (Model.UserGroups.Any(ug => ug.GroupId == blockIds.Usergroupid))
+		{
+			<div class="row custom-row">
+				<div class="col-md-6 custom-col">
+					<p><i class="bi bi-hash"></i><b>Идентификатор блокчейна:</b> @blockIds.Blockchainid1</p>
+				</div>
+				<div class="col-md-6 custom-col">
+					<p><i class="bi bi-briefcase-fill" style="margin-right: 5px"></i><b>Производитель:</b> @(Model.Vendors.FirstOrDefault(v => v.Vendorid == Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).FirstOrDefault()?.Vendorid)?.Vendorname ?? "Нет данных")</p>
+				</div>
+				<div class="col-md-6 custom-col">
+					<p><i class="bi bi-person"></i><b>Клиент:</b> @(Model.Clients.FirstOrDefault(t => t.Clientid == Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).FirstOrDefault()?.Clientid)?.Clientname ?? "Нет данных")</p>
+				</div>
+				<div class="col-md-6 custom-col">
+					<p><i class="bi bi-truck" style="margin-right: 5px"></i><b>Транспортировщик:</b> @(Model.Transporters.FirstOrDefault(t => t.Transporterid == Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).LastOrDefault()?.Transporterid)?.Transportername ?? "Нет данных")</p>
+				</div>
+			</div>
 
-        @if (User.IsInRole("vendor"))
-        {
-            @if (!Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && b.Eventtype == "Ожидание транспортировки"))
-            {
-                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
-                    <div class="card">
-                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
-                                    <h3>Выбрать транспортировщика ▼</h3>
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
-                            <div class="card-body">
-                                <form asp-action="AssignTransporter" method="post">
-                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
-                                    <select class="form-select" id="transporterSelect_@blockIds.Blockchainid1" name="selectedTransporter" style="width:250px; height:50px" onchange="updateSelectedTransporter(this, '@blockIds.Blockchainid1');">
-                                        @foreach (var transporter in Model.Transporters)
-                                        {
-                                            <option value="@transporter.Transporterid">@transporter.Transportername (@transporter.Phone)</option>
-                                        }
-                                    </select>
 
-                                    <input type="hidden" id="selectedTransporter_@blockIds.Blockchainid1" name="selectedTransporter" value="" />
-                                    <h5 id="selectedTransporterDisplay_@blockIds.Blockchainid1"></h5>
+			<div class="table-container">
+				<table class="table">
+					<tr>
+						<th class="user-col">Пользователь</th>
+						<th class="event-col">Событие</th>
+						<th class="location-col">Местоположение</th>
+						<th class="car-number-col">Номер машины</th>
+						<th class="event-details-col">Детали события</th>
+					</tr>
+					<tbody>
+						@foreach (var block in Model.Blockchainblocks.Where(b => b.Blockchainid == blockIds.Blockchainid1).OrderBy(b => b.Blockid))
+						{
+							<tr>
+								<td>@(Model.Users.FirstOrDefault(u => u.Userid == block.Userid)?.Username ?? "Нет данных")</td>
+								<td>@block.Eventtype</td>
+								<td>@block.Location</td>
+								<td>@block.Carnumber</td>
+								<td>@block.Eventdetails</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
 
-                                    <h5>Комментарий:</h5>
-                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
-                                    <input type="hidden" id="detailsInput_@blockIds.Blockchainid1" name="details" value="" />
+			var lastBlockEventType = Model?.Blockchainblocks
+				.Where(b => b.Blockchainid == blockIds.Blockchainid1)
+				.OrderByDescending(b => b.Blockid)
+				?.FirstOrDefault()?.Eventtype;
 
-                                    <script>
-                                        function updateSelectedTransporter(selectElement, blockchainId) {
-                                            var selectedValue = selectElement.value;
-                                            var selectedText = selectElement.options[selectElement.selectedIndex].text;
-                                            document.getElementById('selectedTransporterDisplay_' + blockchainId).innerText = 'Выбранный транспортировщик: ' + selectedText;
-                                            document.getElementById('selectedTransporter_' + blockchainId).value = selectedValue;
-                                        }
+			var carNumber = Model?.Blockchainblocks
+				.Where(b => b.Blockchainid == blockIds.Blockchainid1 && b.Carnumber != "0")
+				.OrderBy(b => b.Blockid)
+				.LastOrDefault()?.Carnumber ?? "";
 
-                                        function updateDetails(textareaElement, blockchainId) {
-                                            var detailsValue = textareaElement.value;
-                                            document.getElementById('detailsInput_' + blockchainId).value = detailsValue;
-                                        }
-                                    </script>
+			var transportersJson = JsonConvert.SerializeObject(Model?.Transporters, new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
 
-                                    <button type="submit" class="btn btn-primary mt-2">Назначить транспортировщика</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
+			@if (User.IsInRole("vendor"))
+			{
+				@if (!Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && b.Eventtype == "Ожидание транспортировки"))
+				{
+					<div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+						<div class="card">
+							<div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+								<h5 class="mb-0">
+									<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+										<h3 style="display: inline-flex; align-items: baseline; color: white">
+											Выбрать транспортировщика <i class="bi bi-caret-down-fill" style="margin-left: 5px;"></i>
+										</h3>
+									</button>
+								</h5>
+							</div>
+							<div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+								<div class="card-body">
+									<form asp-action="AssignTransporter" method="post">
+										<input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+										<div class="row">
+											<div class="col left">
+												<h4 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-truck"></i>Транспортировщик
+												</h4>
+												<select class="form-select" id="transporterSelect_@blockIds.Blockchainid1" name="selectedTransporter" style="width:250px; height:50px" onchange="updateSelectedTransporter(this, '@blockIds.Blockchainid1');">
+													@foreach (var transporter in Model.Transporters)
+													{
+														<option value="@transporter.Transporterid">@transporter.Transportername</option>
+													}
+												</select>
 
-        @if (User.IsInRole("carrier"))
-        {
-            @if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Ожидание транспортировки" || lastBlockEventType == "Транспортировка"))
-            {
-                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
-                    <div class="card">
-                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
-                                    <h3>Изменить статус доставки заказа ▼</h3>
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
-                            <div class="card-body">
-                                <form asp-action="TransporterRecords" method="post">
-                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
-                                    <h5>Статус заказа:</h5>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="orderStatus" id="statusTransportation_@blockIds.Blockchainid1" value="Транспортировка" checked>
-                                        <label class="form-check-label" for="statusTransportation_@blockIds.Blockchainid1">
-                                            Транспортировка
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="orderStatus" id="statusDelivered_@blockIds.Blockchainid1" value="Заказ доставлен">
-                                        <label class="form-check-label" for="statusDelivered_@blockIds.Blockchainid1">
-                                            Заказ доставлен
-                                        </label>
-                                    </div>
+												<input type="hidden" id="selectedTransporter_@blockIds.Blockchainid1" name="selectedTransporter" value="1" />
 
-                                    <h5>Номер машины:</h5>
-                                    <textarea placeholder="Укажите реальный номер машины" class="form-control carNumberInput" id="carNumberInputTextarea_@blockIds.Blockchainid1" oninput="updateCarNumber(this, '@blockIds.Blockchainid1');" required>@carNumber</textarea>
-                                    <input type="hidden" id="carNumberInputHidden_@blockIds.Blockchainid1" name="carNumber" value="@carNumber"/>
+												<p class="custom-mb">
+													<i class="bi bi-pin-map-fill"></i>
+													<b>Адрес:</b> <span id="transporterAddress_@blockIds.Blockchainid1"></span>
+												</p>
 
-                                    <h5>Местоположение:</h5>
-                                    <textarea placeholder="Укажите, где сейчас находится заказ" class="form-control locationInput" id="locationInputTextarea_@blockIds.Blockchainid1" oninput="updateLocation(this, '@blockIds.Blockchainid1');"></textarea>
-                                    <input type="hidden" id="locationInputHidden_@blockIds.Blockchainid1" name="location" value="" />
+												<p class="custom-mb">
+													<i class="bi bi-envelope-fill"></i>
+													<b>Email:</b> <span id="transporterEmail_@blockIds.Blockchainid1"></span>
+												</p>
 
-                                    <h5>Комментарий:</h5>
-                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
-                                    <input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+												<p class="custom-mb">
+													<i class="bi bi-telephone-fill"></i>
+													<b>Телефон:</b> <span id="transporterPhone_@blockIds.Blockchainid1"></span>
+												</p>
+											</div>
+											<div class="col">
+												<h4 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-chat-text-fill"></i>Комментарий
+												</h4>
+												<textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="auto-expanding-textarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');" style="height: 135px;"></textarea>
+												<input type="hidden" id="detailsInput_@blockIds.Blockchainid1" name="details" value="" />
+											</div>
+										</div>
 
-                                    <script>
-                                        function updateDetails(textareaElement, blockchainId) {
-                                            var detailsValue = textareaElement.value;
-                                            document.getElementById('detailsInputHidden_' + blockchainId).value = detailsValue;
-                                        }
+										<button type="submit" id="sendBatchButton" class="btn btn-primary mt-2" style="display: block; margin-left:auto; margin-right:auto; margin-top:10px">Назначить транспортировщика</button>
 
-                                        function updateLocation(textareaElement, blockchainId) {
-                                            var locationValue = textareaElement.value;
-                                            document.getElementById('locationInputHidden_' + blockchainId).value = locationValue;
-                                        }
+										<script>
+											var transporters = @Html.Raw(transportersJson);
 
-                                        function updateCarNumber(textareaElement, blockchainId) {
-                                            var carNumberValue = textareaElement.value;
-                                            document.getElementById('carNumberInputHidden_' + blockchainId).value = carNumberValue;
-                                        }
-                                    </script>
+											function updateSelectedTransporter(selectElement, blockchainId) {
+												var selectedTransporterId = selectElement.value;
+												document.getElementById('selectedTransporter_' + blockchainId).value = selectedTransporterId;
 
-                                    <button type="submit" class="btn btn-primary mt-2">Применить</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
+												var selectedTransporter = transporters.find(t => t.Transporterid == selectedTransporterId);
+												if (selectedTransporter) {
+													document.getElementById('transporterAddress_' + blockchainId).innerText = selectedTransporter.Address;
+													document.getElementById('transporterEmail_' + blockchainId).innerText = selectedTransporter.Email;
+													document.getElementById('transporterPhone_' + blockchainId).innerText = selectedTransporter.Phone;
+												}
+											}
 
-        @if (User.IsInRole("client"))
-        {
-            @if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Заказ доставлен"))
-            {
-                <div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
-                    <div class="card">
-                        <div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
-                            <h5 class="mb-0">
-                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
-                                    <h3>Подробнее ▼</h3>
-                                </button>
-                            </h5>
-                        </div>
-                        <div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
-                            <div class="card-body">
-                                <form asp-action="ClientFinalStage" method="post">
-                                    <input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
-                                    <h5>Статус заказа:</h5>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="orderType" id="statusGet_@blockIds.Blockchainid1" value="Получен" checked>
-                                        <label class="form-check-label" for="statusGet_@blockIds.Blockchainid1">
-                                            Получен
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="orderType" id="statusGetWithProblems_@blockIds.Blockchainid1" value="Получен, но есть претензии">
-                                        <label class="form-check-label" for="statusGetWithProblems_@blockIds.Blockchainid1">
-                                            Получен, но есть претензии
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="orderType" id="statusCansel_@blockIds.Blockchainid1" value="Отказ от товаров">
-                                        <label class="form-check-label" for="statusCansel_@blockIds.Blockchainid1">
-                                            Отказ от товаров
-                                        </label>
-                                    </div>
+											function updateDetails(textareaElement, blockchainId) {
+												var detailsValue = textareaElement.value;
+												document.getElementById('detailsInput_' + blockchainId).value = detailsValue;
+											}
 
-                                    <h5>Комментарий:</h5>
-                                    <textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');"></textarea>
-                                    <input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+											// Инициализация функции при загрузке страницы
+											document.addEventListener('DOMContentLoaded', function () {
+												var initialSelectElement = document.getElementById('transporterSelect_@blockIds.Blockchainid1');
+												updateSelectedTransporter(initialSelectElement, '@blockIds.Blockchainid1');
+											});
+										</script>
+									</form>
+								</div>
+							</div>
+						</div>
+						<br />
+					</div>
+				}
+			}
 
-                                    <script>
-                                        function updateDetails(textareaElement, blockchainId) {
-                                            var detailsValue = textareaElement.value;
-                                            document.getElementById('detailsInputHidden_' + blockchainId).value = detailsValue;
-                                        }
-                                    </script>
+			@if (User.IsInRole("carrier"))
+			{
+				@if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Ожидание транспортировки" || lastBlockEventType == "Транспортировка"))
+				{
+					<div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+						<div class="card">
+							<div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+								<h5 class="mb-0">
+									<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+										<h3 style="display: inline-flex; align-items: baseline; color: white">
+											Изменить статус доставки заказа <i class="bi bi-caret-down-fill" style="margin-left: 5px;"></i>
+										</h3>
+									</button>
+								</h5>
+							</div>
+							<div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+								<div class="card-body">
+									<form asp-action="TransporterRecords" method="post">
+										<input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+										<div class="row">
+											<div class="col left">
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-clipboard-check-fill"></i>Статус заказа:
+												</h5>
 
-                                    <button type="submit" class="btn btn-primary mt-2">Отправить</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-    }
+												<div class="form-check">
+													<input class="form-check-input" type="radio" name="orderStatus" id="statusTransportation_@blockIds.Blockchainid1" value="Транспортировка" checked>
+													<label class="form-check-label" for="statusTransportation_@blockIds.Blockchainid1">
+														Транспортировка
+													</label>
+												</div>
+												<div class="form-check">
+													<input class="form-check-input" type="radio" name="orderStatus" id="statusDelivered_@blockIds.Blockchainid1" value="Заказ доставлен">
+													<label class="form-check-label" for="statusDelivered_@blockIds.Blockchainid1">
+														Заказ доставлен
+													</label>
+												</div>
+
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-hash"></i>Номер машины:
+												</h5>
+												<div class="form-group">
+													<input type="text" style="margin-top: 7px" value="@carNumber" id="carNumberInput_@blockIds.Blockchainid1" class="form-control" placeholder="А123ВС77" oninput="validateAndUpdateCarNumber(this, '@blockIds.Blockchainid1');" required />
+													<span id="errorMessage_@blockIds.Blockchainid1" style="color: red; display: none;">Неверный формат номера!</span>
+													<input type="hidden" id="carNumberInputHidden_@blockIds.Blockchainid1" name="carNumber" value="@carNumber" />
+												</div>
+
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-pin-map-fill"></i>Местоположение:
+												</h5>
+												<input type="text" placeholder="Укажите, где сейчас находится заказ" class="form-control locationInput" id="locationInputTextarea_@blockIds.Blockchainid1" oninput="updateLocation(this, '@blockIds.Blockchainid1');">
+												<input type="hidden" id="locationInputHidden_@blockIds.Blockchainid1" name="location" value="" />
+											</div>
+
+											<div class="col">
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-chat-text-fill"></i>Комментарий
+												</h5>
+												<textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');" style="height: 222.5px"></textarea>
+												<input type="hidden" id="detailsInput_@blockIds.Blockchainid1" name="details" value="" />
+												<input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+											</div>
+										</div>
+
+										<script>
+											function validateAndUpdateCarNumber(inputElement, blockchainId) {
+												const carNumberPattern = /^[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}$/;
+												const carNumberValue = inputElement.value.toUpperCase(); // Преобразуем в верхний регистр
+												const errorMessage = document.getElementById('errorMessage_' + blockchainId);
+												const hiddenInput = document.getElementById('carNumberInputHidden_' + blockchainId);
+
+												if (carNumberPattern.test(carNumberValue)) {
+													errorMessage.style.display = 'none'; // Убираем сообщение об ошибке
+													hiddenInput.value = carNumberValue; // Обновляем скрытое поле
+												} else {
+													errorMessage.style.display = 'block'; // Показываем сообщение об ошибке
+												}
+											}
+											function updateDetails(textareaElement, blockchainId) {
+												var detailsValue = textareaElement.value;
+												document.getElementById('detailsInput_' + blockchainId).value = detailsValue;
+											}
+
+											function updateLocation(textareaElement, blockchainId) {
+												var locationValue = textareaElement.value;
+												document.getElementById('locationInputHidden_' + blockchainId).value = locationValue;
+											}
+										</script>
+
+										<button type="submit" id="sendBatchButton" class="btn btn-primary mt-2" style="display: block; margin-left:auto; margin-right:auto; margin-top:10px">Применить</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
+			}
+
+			@if (User.IsInRole("client"))
+			{
+				@if (Model.Blockchainblocks.Any(b => b.Blockchainid == blockIds.Blockchainid1 && lastBlockEventType == "Заказ доставлен"))
+				{
+					<div class="accordion" id="transporterAccordion_@blockIds.Blockchainid1">
+						<div class="card">
+							<div class="card-header" id="headingTransporter_@blockIds.Blockchainid1">
+								<h5 class="mb-0">
+									<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseTransporter_@blockIds.Blockchainid1" style="text-decoration: none;" aria-expanded="false" aria-controls="collapseTransporter_@blockIds.Blockchainid1">
+										<h3 style="display: inline-flex; align-items: baseline; color: white">
+											Подробнее <i class="bi bi-caret-down-fill" style="margin-left: 5px;"></i>
+										</h3>
+									</button>
+								</h5>
+							</div>
+							<div id="collapseTransporter_@blockIds.Blockchainid1" class="collapse" aria-labelledby="headingTransporter_@blockIds.Blockchainid1" data-parent="#transporterAccordion_@blockIds.Blockchainid1">
+								<div class="card-body">
+									<form asp-action="ClientFinalStage" method="post">
+										<input type="hidden" name="blockchainId" value="@blockIds.Blockchainid1" />
+										<div class="row">
+											<div class="col left">
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-clipboard-check-fill"></i>Статус заказа:
+												</h5>
+												<div class="form-check">
+													<input class="form-check-input" type="radio" name="orderType" id="statusGet_@blockIds.Blockchainid1" value="Получен" checked>
+													<label class="form-check-label" for="statusGet_@blockIds.Blockchainid1">
+														Получен
+													</label>
+												</div>
+												<div class="form-check">
+													<input class="form-check-input" type="radio" name="orderType" id="statusGetWithProblems_@blockIds.Blockchainid1" value="Получен, но есть претензии">
+													<label class="form-check-label" for="statusGetWithProblems_@blockIds.Blockchainid1">
+														Получен, но есть претензии
+													</label>
+												</div>
+												<div class="form-check">
+													<input class="form-check-input" type="radio" name="orderType" id="statusCansel_@blockIds.Blockchainid1" value="Отказ от товаров">
+													<label class="form-check-label" for="statusCansel_@blockIds.Blockchainid1">
+														Отказ от товаров
+													</label>
+												</div>
+											</div>
+											<div class="col">
+												<h5 style="display: inline-flex; align-items: baseline;">
+													<i class="bi bi-chat-text-fill"></i>Комментарий
+												</h5>
+												<textarea placeholder="Напишите здесь что-нибудь..." class="form-control detailsInput" id="detailsInputTextarea_@blockIds.Blockchainid1" oninput="updateDetails(this, '@blockIds.Blockchainid1');" style="height: 83px"></textarea>
+												<input type="hidden" id="detailsInputHidden_@blockIds.Blockchainid1" name="details" value="" />
+											</div>
+										</div>
+
+										<script>
+											function updateDetails(textareaElement, blockchainId) {
+												var detailsValue = textareaElement.value;
+												document.getElementById('detailsInputHidden_' + blockchainId).value = detailsValue;
+											}
+										</script>
+
+										<button type="submit" id="sendBatchButton" class="btn btn-primary mt-2" style="display: block; margin-left:auto; margin-right:auto; margin-top:10px">Отправить</button>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+				}
+			}
+			<br />
+		}
+	}
+
+	<h2 style="margin-bottom: 17px">Проверка подписи блока</h2>
+	@await Html.PartialAsync("FormCheckSignature")
+
+	<h2 style="margin-bottom: 17px">Объединенные цепочки поставок</h2>
+	<div class="table-container">
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Номер блока</th>
+					<th>Идентификатор блокчейна</th>
+					<th>Производитель</th>
+					<th>Клиент</th>
+					<th>Транспортировщик</th>
+					<th>Пользователь</th>
+					<th>Событие</th>
+					<th>Местоположение</th>
+					<th>Номер машины</th>
+					<th>Детали события</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var block in Model.Blockchainblocks.OrderBy(b => b.Blockchainid))
+				{
+					<tr>
+						<td>@block.Blockid</td>
+						<td>@block.Blockchainid</td>
+						<td>@(Model.Vendors.FirstOrDefault(v => v.Vendorid == block.Vendorid)?.Vendorname ?? "Нет данных")</td>
+						<td>@(Model.Clients.FirstOrDefault(t => t.Clientid == block.Clientid)?.Clientname ?? "Нет данных")</td>
+						<td>@(Model.Transporters.FirstOrDefault(t => t.Transporterid == block.Transporterid)?.Transportername ?? "Нет данных")</td>
+						<td>@(Model.Users.FirstOrDefault(u => u.Userid == block.Userid)?.Username ?? "Нет данных")</td>
+						<td>@block.Eventtype</td>
+						<td>@block.Location</td>
+						<td>@block.Carnumber</td>
+						<td>@block.Eventdetails</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
 }
 
-<h4>Объединенные цепочки блоков</h4>
-<table class="table">
-    <thead>
-        @await Html.PartialAsync("_BlockchainTableHead")
-    </thead>
-    <tbody>
-        @await Html.PartialAsync("_BlockchainTableBody", Model)
-    </tbody>
-</table>
+else
+{
+	@if (User.IsInRole("carrier"))
+	{
+		<p>В будущем здесь появятся заказы от предприятий.</p>
+	}
+	@if (User.IsInRole("vendor"))
+	{
+		<p>В будущем здесь появятся заказы от Ваших клиентов.</p>
+	}
+}
+

@@ -1,16 +1,10 @@
-﻿@model Blockchain_Supply_Chain_Tracking_System.Controllers.TrackingModel
+﻿@model Blockchain_Supply_Chain_Tracking_System.Models.TrackingModel
 
 @foreach (var block in Model.Blockchainblocks)
 {
-    <tr>
-        <td>@block.Blockchainid</td>
-        <td>@(Model.Vendors.FirstOrDefault(v => v.Vendorid == block.Vendorid)?.Vendorname ?? "Нет данных")</td>
-        <td>@(Model.Clients.FirstOrDefault(t => t.Clientid == block.Clientid)?.Clientname ?? "Нет данных")</td>
-        <td>@(Model.Transporters.FirstOrDefault(t => t.Transporterid == block.Transporterid)?.Transportername ?? "Нет данных")</td>
-        <td>@(Model.Users.FirstOrDefault(u => u.Userid == block.Userid)?.Username ?? "Нет данных")</td>
-        <td>@block.Eventtype</td>
-        <td>@block.Location</td>
-        <td>@block.Carnumber</td>
-        <td>@block.Eventdetails</td>
-    </tr>
+    <td>@(Model.Users.FirstOrDefault(u => u.Userid == block.Userid)?.Username ?? "Нет данных")</td>
+    <td>@block.Eventtype</td>
+    <td>@block.Location</td>
+    <td>@block.Carnumber</td>
+    <td>@block.Eventdetails</td>
 }

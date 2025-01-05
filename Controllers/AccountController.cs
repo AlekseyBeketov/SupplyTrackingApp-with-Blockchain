@@ -27,16 +27,13 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            // Поиск пользователя в базе данных
             var user = _context.Users.SingleOrDefault(u => u.Username == username);
             string passwordHash = "";
             if (password == null) password = passwordHash;
             using (SHA256 sha256Hash = SHA256.Create())
             {
-                // Преобразуем строку в массив байтов и вычисляем хеш
                 byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
 
-                // Преобразуем массив байтов в строку шестнадцатеричных чисел
                 StringBuilder builder = new StringBuilder();
                 for (int i = 0; i < bytes.Length; i++)
                 {
@@ -50,7 +47,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.Userid.ToString()), // Add UserId as a claim
+                new Claim(ClaimTypes.NameIdentifier, user.Userid.ToString()),
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
@@ -61,12 +58,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 return RedirectToAction("Index", "Tracking");
             }
 
-
-            // Если логин неудачный
             ViewBag.ErrorMessage = "Invalid username or password";
             return View();
         }
-
 
         public IActionResult Logout()
         {

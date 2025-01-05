@@ -1,7 +1,4 @@
-﻿// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-
-using Blockchain_Supply_Chain_Tracking_System.Models;
+﻿using Blockchain_Supply_Chain_Tracking_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Blockchain_Supply_Chain_Tracking_System.Services;
@@ -9,41 +6,22 @@ using System.Security.Claims;
 using JavaScriptEngineSwitcher.Core;
 using System.Text;
 using System.Security.Cryptography;
-
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System.Data;
 
 namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 {
-    public class TrackingModel
-    {
-        public List<User> Users { get; set; }
-        public List<Vendor> Vendors { get; set; }
-        public List<Vendorproduct> VendorProducts { get; set; }
-        public List<Blockchainblock> Blockchainblocks { get; set; }
-        public List<Blockchainid> Blockchainids { get; set; }
-        public List<UserGroup> UserGroups { get; set; }
-        public List<Transporter> Transporters{ get; set; }
-        public List<Client> Clients { get; set; }
-    }
-
-    public class CreateBlockchainRequest
-    {
-        public string BatchId { get; set; }
-        public string UserGroupId { get; set; }
-        public int UserId { get; set; }
-        public string DetailsOrder { get; set; }
-        public string Signature { get; set; }
-    }
-    public class CreateBlockchainRequestWithBatch
-    {
-        public CreateBlockchainRequest Request { get; set; }
-        public Batch Batch { get; set; }
-    }
-
     public class TrackingController : Controller
     {
         private readonly SupplyTrackingContext _supplyTrackingContext;
         private readonly MongoBatchService _mongoBatchService;
-        private readonly MongoUserGroupService _mongoUserGroupService; 
+        private readonly MongoUserGroupService _mongoUserGroupService;
         private List<Blockchainblock> blockchain;
         private int difficulty = 4;
         private IJsEngine jsEngine;
@@ -84,14 +62,14 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
             int UserId = 0;
             string UserType = "";
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity!.IsAuthenticated)
             {
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
                 var userTypeClaim = User.Claims.FirstOrDefault(u => u.Type == ClaimTypes.Role);
                 if (userIdClaim != null)
                 {
-                   UserId = int.Parse(userIdClaim.Value);
-                   UserType = (userTypeClaim.Value).ToString();
+                    UserId = int.Parse(userIdClaim.Value);
+                    UserType = (userTypeClaim!.Value).ToString();
                 }
             }
 
@@ -101,7 +79,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             foreach (var groupId in userGroupIds)
             {
                 var matchingBlockchainids = _supplyTrackingContext.Blockchainids
-                    .Where(b => b.Usergroupid == groupId.GroupId) 
+                    .Where(b => b.Usergroupid == groupId.GroupId)
                     .ToList();
 
                 blockchainids.AddRange(matchingBlockchainids);
@@ -110,12 +88,12 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             {
                 blockchain.AddRange(_supplyTrackingContext.Blockchainblocks.Where(b => b.Blockchainid == blockchainid.Blockchainid1).ToList());
             }
-            
+
             if (UserType == "admin")
             {
                 blockchain = _supplyTrackingContext.Blockchainblocks.ToList();
             }
-
+            blockchainids.Reverse();
             var viewModel = new TrackingModel
             {
                 Users = users,
@@ -138,7 +116,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             {
                 try
                 {
-                    if (User.Identity.IsAuthenticated)
+                    if (User.Identity!.IsAuthenticated)
                     {
                         var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
                         if (userIdClaim != null)
@@ -148,12 +126,12 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                     }
 
 
-                    int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
-                    int userVendorId = (int)_supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == vendorId).Userid;
+                    int vendorId = _supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid ?? 0;
+                    int userVendorId = _supplyTrackingContext.Vendors.FirstOrDefault(v => v.Vendorid == vendorId)?.Userid ?? 0;
 
                     var userGroup = new UserGroup
                     {
-                        UserIds = new List<int> { batch.UserId, userVendorId } 
+                        UserIds = new List<int> { batch.UserId, userVendorId }
                     };
 
                     await _mongoBatchService.SaveBatchAsync(batch);
@@ -170,15 +148,100 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             return Json(new { success = false, message = "Error: No data to save" });
         }
 
-        
+		public async Task<bool> VerifyBlockSignature(Blockchainblock block)
+		{
+			try
+			{
+                var keyJson = JObject.Parse(block.Publickey); 
+                var n = keyJson?["n"].ToString() ?? "";
+                var e = keyJson?["e"].ToString() ?? "";
+
+                n = n.Replace('-', '+').Replace('_', '/');
+                n = AddBase64Padding(n);  
+
+                e = e.Replace('-', '+').Replace('_', '/');
+                e = AddBase64Padding(e);
+
+                var modulus = Convert.FromBase64String(n);
+                var exponent = Convert.FromBase64String(e);
+
+                RSA rsa = RSA.Create();
+                rsa.ImportParameters(new RSAParameters
+                {
+                    Modulus = modulus,
+                    Exponent = exponent
+                });
+
+
+                byte[] signature = Convert.FromBase64String(block?.Signature ?? "");
+
+                var batches = await _mongoBatchService.GetAllBatchesAsync();
+
+                var record = block;
+
+                if (record != null)
+                {
+					record.Signature = record.Publickey = "";
+                    record.Blockid = 0;
+				}
+
+				string dataToVerify = JsonConvert.SerializeObject(record);
+
+                dataToVerify = Regex.Replace(dataToVerify, @"\\", "");
+                Console.WriteLine(dataToVerify);
+
+                byte[] dataBytes = Encoding.UTF8.GetBytes(dataToVerify);
+
+                return rsa.VerifyData(dataBytes, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при проверке подписи: {ex.Message}");
+                return false;
+			}
+		}
+
+        private string AddBase64Padding(string base64)
+        {
+            int padding = base64.Length % 4;
+            if (padding != 0)
+            {
+                base64 = base64.PadRight(base64.Length + 4 - padding, '=');
+            }
+            return base64;
+        }
+
         [HttpPost]
+		public async Task<IActionResult> VerifyBlockSignature([FromBody] VerifyBlockSignatureRequest request)
+		{
+			var block = _supplyTrackingContext.Blockchainblocks
+				.FirstOrDefault(b => b.Blockchainid == request.blockchainId && b.Blockid == request.blockNumber);
+
+			if (block == null)
+			{
+				return Json(new { success = false, message = "Блок не найден" });
+			}
+
+			bool isVerified = await VerifyBlockSignature(block);
+
+			if (isVerified)
+			{
+				return Json(new { success = true });
+			}
+			else
+			{
+				return Json(new { success = false, message = "Неверная подпись" });
+			}
+		}
+
+		[HttpPost]
         public async Task<IActionResult> AssignTransporter(string blockchainId, int selectedTransporter, string details)
         {
             int userId = GetCurrentUserId();
             var userGroupId = _supplyTrackingContext.Blockchainids
                 .FirstOrDefault(b => b.Blockchainid1 == blockchainId)?.Usergroupid;
 
-            var transporterUserId = _supplyTrackingContext.Transporters.FirstOrDefault(t => t.Transporterid == selectedTransporter).Userid;
+            var transporterUserId = _supplyTrackingContext.Transporters.FirstOrDefault(t => t.Transporterid == selectedTransporter)?.Userid;
 
             if (string.IsNullOrEmpty(userGroupId))
             {
@@ -188,11 +251,10 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             await _mongoUserGroupService.InsertIntoUserGroupAsync(userGroupId, transporterUserId ?? 0);
             var firstBlock = _supplyTrackingContext.Blockchainblocks.FirstOrDefault(b => b.Blockchainid == blockchainId);
 
-            Blockchainblock newBlock = CreateBlock(blockchainId, firstBlock.Vendorid ?? 0, firstBlock.Clientid ?? 0,
-                selectedTransporter, userId, firstBlock.Batchid, "Ожидание транспортировки", firstBlock.Location,
-                firstBlock.Hash, "0", details, "publicKey");
-            MineBlock(newBlock);
-            _supplyTrackingContext.Blockchainblocks.Add(newBlock); 
+            Blockchainblock newBlock = CreateBlock(blockchainId, firstBlock?.Vendorid ?? 0, firstBlock?.Clientid ?? 0,
+                selectedTransporter, userId, firstBlock?.Batchid ?? "", "Ожидание транспортировки", firstBlock?.Location ?? "",
+                firstBlock?.Hash ?? "", "0", details);
+            _supplyTrackingContext.Blockchainblocks.Add(newBlock);
             await _supplyTrackingContext.SaveChangesAsync();
             return RedirectToAction("Index");
         }
@@ -206,10 +268,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 .OrderBy(b => b.Blockid)
                 .LastOrDefault();
 
-            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock.Vendorid ?? 0, oldBlock.Clientid ?? 0,
-                oldBlock.Transporterid ?? 0, userId, oldBlock.Batchid, orderStatus, location ?? oldBlock.Location,
-                oldBlock.Hash, carNumber, details, "publicKey");
-            MineBlock(newBlock);
+            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock?.Vendorid ?? 0, oldBlock?.Clientid ?? 0,
+                oldBlock?.Transporterid ?? 0, userId, oldBlock?.Batchid, orderStatus, location ?? oldBlock?.Location ?? "",
+                oldBlock?.Hash ?? "", carNumber, details);
             _supplyTrackingContext.Blockchainblocks.Add(newBlock);
             await _supplyTrackingContext.SaveChangesAsync();
             return RedirectToAction("Index");
@@ -229,10 +290,9 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 details = "Заказ получен, но возникли проблемы. " + details;
             }
 
-            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock.Vendorid ?? 0, oldBlock.Clientid ?? 0,
-                oldBlock.Transporterid ?? 0, userId, oldBlock.Batchid, "Сделка закрыта", oldBlock.Location,
-                oldBlock.Hash, oldBlock.Carnumber, details, "publicKey");
-            MineBlock(newBlock);
+            Blockchainblock newBlock = CreateBlock(blockchainId, oldBlock?.Vendorid ?? 0, oldBlock?.Clientid ?? 0,
+                oldBlock?.Transporterid ?? 0, userId, oldBlock?.Batchid ?? "", "Сделка закрыта", oldBlock?.Location ?? "",
+                oldBlock?.Hash ?? "", oldBlock?.Carnumber ?? "", details);
             _supplyTrackingContext.Blockchainblocks.Add(newBlock);
             await _supplyTrackingContext.SaveChangesAsync();
             return RedirectToAction("Index");
@@ -248,14 +308,16 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
             var request = requestWithBatch.Request;
             var batch = requestWithBatch.Batch;
+            var publicKey = requestWithBatch.Request.PublicKey;
+            string signature = requestWithBatch.Request.Signature;
 
             Blockchainid blockchainid = new Blockchainid { Blockchainid1 = request.BatchId, Usergroupid = request.UserGroupId };
             _supplyTrackingContext.Blockchainids.Add(blockchainid);
 
             blockchain = new List<Blockchainblock>();
             difficulty = 4;
-            int vendorId = (int)_supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid;
-            int clientId = _supplyTrackingContext.Clients.FirstOrDefault(c => c.Userid == request.UserId).Clientid;
+            int vendorId = _supplyTrackingContext.Vendorproducts.FirstOrDefault(v => v.Productid == batch.Products.FirstOrDefault().ProductId)?.Vendorid ?? 0;
+            int clientId = _supplyTrackingContext.Clients.FirstOrDefault(c => c.Userid == request.UserId)?.Clientid ?? 0;
             CreateGenesisBlock(request.BatchId, request.UserId, request.DetailsOrder, vendorId, clientId);
 
             foreach (var block in blockchain)
@@ -276,17 +338,15 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             int userId = UserId;
             string batchId = BatchId;
             string eventType = "Поиск транспортировщика";
-            string location = _supplyTrackingContext.Clients.FirstOrDefault(c => c.Userid == userId)?.Address;
+            string location = _supplyTrackingContext.Clients.FirstOrDefault(c => c.Userid == userId)?.Address ?? "";
             string previousHash = "0";
             string carNumber = "0";
-            string eventDetails = DetailsOrder; 
-            string publicKey = "хз";
-            Blockchainblock genesisBlock = CreateBlock(blockchainId, vendorId, clientId, transporterId, userId, batchId, eventType, location, previousHash, carNumber, eventDetails, publicKey);
-            MineBlock(genesisBlock);
+            string eventDetails = DetailsOrder;
+            Blockchainblock genesisBlock = CreateBlock(blockchainId, vendorId, clientId, transporterId, userId, batchId, eventType, location, previousHash, carNumber, eventDetails);
             blockchain.Add(genesisBlock);
         }
 
-        private Blockchainblock CreateBlock(string blockchainId, int vendorId, int clientId, int transporterId, int userId, string batchId, string eventType, string location, string previousHash, string carNumber, string eventDetails, string publicKey)
+        private Blockchainblock CreateBlock(string blockchainId, int vendorId, int clientId, int transporterId, int userId, string batchId, string eventType, string location, string previousHash, string carNumber, string eventDetails)
         {
             Blockchainblock block = new Blockchainblock
             {
@@ -302,14 +362,44 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                 Previoushash = previousHash,
                 Carnumber = carNumber,
                 Eventdetails = eventDetails,
-                Timestampblock = DateTime.Now,
-                Nonce = 0,
-                Publickey = publicKey
+				Timestampblock = new DateTime(DateTime.Now.Ticks / 10000 * 10000, DateTimeKind.Unspecified),
+				Nonce = 0,
+                Signature = "",
+                Publickey = "",
             };
-            return block;
+			MineBlock(block);
+			string dataToSignJson = JsonConvert.SerializeObject(block);
+			var (publicKey, signature) = GenerateKeysAndSignData(dataToSignJson);
+            block.Publickey = publicKey;
+            block.Signature = signature;
+			return block;
         }
 
-        private string CalculateHash(Blockchainblock block)
+		private (string publicKey, string signature) GenerateKeysAndSignData(string data)
+		{
+			using (RSA rsa = RSA.Create(2048))
+			{
+				// Экспорт публичного ключа в формате JSON
+				var parameters = rsa.ExportParameters(false);
+				var publicKey = JsonConvert.SerializeObject(new
+				{
+					n = Convert.ToBase64String(parameters.Modulus),
+					e = Convert.ToBase64String(parameters.Exponent)
+				});
+
+				// Экспорт приватного ключа (если нужно)
+				var privateKey = JsonConvert.SerializeObject(rsa.ExportParameters(true));
+
+				// Подпись данных
+				byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+				byte[] signatureBytes = rsa.SignData(dataBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
+				string signature = Convert.ToBase64String(signatureBytes);
+
+				return (publicKey, signature);
+			}
+		}
+
+		private string CalculateHash(Blockchainblock block)
         {
             string dataToHash = $"{block.Blockchainid}{block.Vendorid}{block.Clientid}{block.Transporterid}{block.Userid}{block.Batchid}{block.Eventtype}{block.Location}{block.Hash}{block.Previoushash}{block.Carnumber}{block.Hash}{block.Hash}";
             using (SHA256 sha256 = SHA256.Create())
@@ -329,7 +419,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
             string target = new string('0', difficulty);
             try
             {
-                while (!block.Hash.StartsWith(target))
+                while (!block.Hash!.StartsWith(target))
                 {
                     block.Nonce++;
                     block.Hash = CalculateHash(block);
@@ -347,7 +437,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
 
         private int GetCurrentUserId()
         {
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity!.IsAuthenticated)
             {
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
                 if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
@@ -355,7 +445,7 @@ namespace Blockchain_Supply_Chain_Tracking_System.Controllers
                     return userId;
                 }
             }
-            return 0; 
+            return 0;
         }
     }
 }

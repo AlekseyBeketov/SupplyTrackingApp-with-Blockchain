@@ -2,15 +2,13 @@ using Blockchain_Supply_Chain_Tracking_System.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MongoDB.Driver;
-using Blockchain_Supply_Chain_Tracking_System.Services; // Для класса MongoBatchService
+using Blockchain_Supply_Chain_Tracking_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавление контекста базы данных
 builder.Services.AddDbContext<SupplyTrackingContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Добавление сервисов для MongoDB
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     var connectionString = builder.Configuration.GetConnectionString("MongoDbConnection");
@@ -23,25 +21,21 @@ builder.Services.AddScoped<MongoUserGroupService>();
 builder.Services.AddScoped(sp =>
 {
     var mongoClient = sp.GetRequiredService<IMongoClient>();
-    return mongoClient.GetDatabase("SupplyTrackingDb"); // Укажите имя вашей базы данных
+    return mongoClient.GetDatabase("SupplyTrackingDb");
 });
 
-// Добавление контроллеров с представлениями
 builder.Services.AddControllersWithViews();
 
-// Добавление аутентификации с использованием куков
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.Cookie.Name = "UserLoginCookie"; // Название куки
-        options.LoginPath = "/Account/Login";    // Страница для логина
-        options.AccessDeniedPath = "/Account/AccessDenied"; // Страница при отказе доступа
+        options.Cookie.Name = "UserLoginCookie";
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
     });
 
-// Добавление авторизации
 builder.Services.AddAuthorization(options =>
 {
-    // Пример политики для администратора
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin"));
     options.AddPolicy("VendorOnly", policy => policy.RequireRole("vendor"));
     options.AddPolicy("CarrierOnly", policy => policy.RequireRole("carrier"));
@@ -50,7 +44,6 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
-// Обработка ошибок и маршрутизация
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -62,7 +55,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Включение аутентификации и авторизации
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseDeveloperExceptionPage();
